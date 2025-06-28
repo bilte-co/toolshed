@@ -1,3 +1,25 @@
+// Package argon provides secure Argon2 password hashing functionality.
+// It supports both Argon2id (recommended) and Argon2i variants with configurable parameters.
+// 
+// Argon2 is a memory-hard key derivation function that won the Password Hashing Competition
+// and is resistant to both time-memory trade-off attacks and side-channel attacks.
+//
+// Example usage:
+//
+//	// Hash a password with default configuration
+//	hash, err := argon.GenerateHashedPassword("mypassword", argon.DefaultConfig)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	// Verify a password
+//	valid, err := argon.CompareHashAndPassword(hash, "mypassword")
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	if valid {
+//		fmt.Println("Password is correct")
+//	}
 package argon
 
 import (

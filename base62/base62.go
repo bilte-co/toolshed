@@ -1,3 +1,20 @@
+// Package base62 provides base62 encoding and decoding functionality.
+// Base62 encoding uses digits 0-9, uppercase letters A-Z, and lowercase letters a-z.
+// This provides a URL-safe, case-sensitive encoding that's more compact than base64
+// and doesn't require padding characters.
+//
+// Example usage:
+//
+//	// Encode bytes to base62
+//	encoded := base62.StdEncoding.EncodeToString([]byte("Hello, World!"))
+//	fmt.Println(encoded)
+//
+//	// Decode base62 string back to bytes
+//	decoded, err := base62.StdEncoding.DecodeString(encoded)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	fmt.Println(string(decoded))
 package base62
 
 import (

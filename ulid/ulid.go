@@ -1,3 +1,25 @@
+// Package ulid provides ULID (Universally Unique Lexicographically Sortable Identifier) generation
+// and manipulation with base62 encoding. Unlike standard ULIDs which use base32 encoding,
+// this package uses base62 for more compact string representation.
+//
+// ULIDs are sortable by creation time and contain both timestamp and random components,
+// making them ideal for distributed systems where you need unique, sortable identifiers.
+//
+// Example usage:
+//
+//	// Create a new ULID with prefix
+//	id, err := ulid.CreateULID("user", time.Now())
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	fmt.Println(id) // user_base62encodedULID
+//
+//	// Extract timestamp from ULID
+//	timestamp, err := ulid.Timestamp(id)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	fmt.Println("Created at:", timestamp)
 package ulid
 
 import (
@@ -11,6 +33,9 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
+// CreateULID generates a new ULID with an optional prefix and given timestamp.
+// The ULID is encoded using base62 for compact representation. If prefix is not empty,
+// it will be prepended to the ULID with an underscore separator.
 func CreateULID(prefix string, timestamp time.Time) (string, error) {
 	entropy := rand.Reader
 	ms := ulid.Timestamp(timestamp)
@@ -33,6 +58,8 @@ func CreateULID(prefix string, timestamp time.Time) (string, error) {
 	return sb.String(), nil
 }
 
+// Decode converts a base62-encoded ULID string (with optional prefix) back to a ulid.ULID.
+// The function automatically strips any prefix before decoding.
 func Decode(s string) (ulid.ULID, error) {
 	str, err := stripPrefix(s)
 	if err != nil {
@@ -52,6 +79,8 @@ func Decode(s string) (ulid.ULID, error) {
 	return ulid.ULID(decoded), nil
 }
 
+// Timestamp extracts the timestamp component from a ULID string.
+// Returns the time.Time when the ULID was created, automatically handling prefixes.
 func Timestamp(id string) (time.Time, error) {
 	str, err := stripPrefix(id)
 	if err != nil {
@@ -74,6 +103,8 @@ func Timestamp(id string) (time.Time, error) {
 	return time.UnixMilli(int64(timestampMs)), nil
 }
 
+// stripPrefix removes the prefix from a ULID string, if present.
+// Returns the base62-encoded ULID portion without the prefix and underscore.
 func stripPrefix(s string) (string, error) {
 	var str string
 	pos := strings.LastIndex(s, "_")

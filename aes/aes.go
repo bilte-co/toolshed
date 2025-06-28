@@ -1,3 +1,25 @@
+// Package aes provides AES-GCM encryption and decryption functionality with base64 encoding.
+// It supports 128, 192, and 256-bit keys and uses authenticated encryption for security.
+//
+// Example usage:
+//
+//	// Generate a key
+//	key, err := aes.GenerateAESKey(256)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	// Encrypt data
+//	ciphertext, err := aes.Encrypt(key, "secret message")
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	// Decrypt data
+//	plaintext, err := aes.Decrypt(key, ciphertext)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
 package aes
 
 import (

@@ -1,3 +1,19 @@
+// Package base64 provides convenient wrapper functions for base64 encoding and decoding.
+// All functions use the standard base64 encoding (RFC 4648) which is URL-safe and
+// widely compatible across systems.
+//
+// Example usage:
+//
+//	// Encode a string to base64
+//	encoded := base64.EncodeString("Hello, World!")
+//	fmt.Println(encoded) // SGVsbG8sIFdvcmxkIQ==
+//
+//	// Decode a base64 string
+//	decoded, err := base64.DecodeToString(encoded)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	fmt.Println(decoded) // Hello, World!
 package base64
 
 import (
