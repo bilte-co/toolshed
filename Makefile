@@ -1,9 +1,10 @@
 # Variables
 BINARY_NAME=toolshed
-VERSION?=dev
 COMMIT?=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 DATE?=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 LDFLAGS=-ldflags "-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
+VERSION ?= $(shell git describe --tags --abbrev=0)
+NEXT_PATCH := $(shell echo $(VERSION) | awk -F. '{printf "v%d.%d.%d", $$1, $$2, $$3+1}')
 
 # Build settings
 GOOS?=$(shell go env GOOS)
@@ -20,6 +21,32 @@ help: ## Show this help message
 	@echo ''
 	@echo 'Targets:'
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+.PHONY: tag
+tag:
+	@read -p "Enter version tag (e.g. v1.4.0): " VERSION; \
+	git tag -a $$VERSION -m "Release $$VERSION"; \
+	git push origin $$VERSION; \
+	echo "Published $$VERSION"
+
+.PHONY: bump-patch
+bump-patch:
+	git tag -a $(NEXT_PATCH) -m "Release $(NEXT_PATCH)"
+	git push origin $(NEXT_PATCH)
+
+.PHONY: bump-minor
+bump-minor:
+	@read -p "Enter new minor version (e.g. v1.5.0): " VERSION; \
+	git tag -a $$VERSION -m "Release $$VERSION"; \
+	git push origin $$VERSION; \
+	echo "Published $$VERSION"
+
+.PHONY: bump-major
+bump-major:
+	@read -p "Enter new major version (e.g. v2.0.0): " VERSION; \
+	git tag -a $$VERSION -m "Release $$VERSION"; \
+	git push origin $$VERSION; \
+	echo "Published $$VERSION"
 
 build: deps ## Build the binary
 	@echo "Building $(BINARY_NAME)..."
@@ -74,25 +101,7 @@ dev: deps fmt vet ## Development build and checks
 
 release: clean deps fmt vet test ## Build release binaries for multiple platforms
 	@echo "Building release binaries..."
-	@mkdir -p $(DIST_DIR)
-	
-	@echo "Building for Linux amd64..."
-	@GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(DIST_DIR)/$(BINARY_NAME)-linux-amd64 .
-	
-	@echo "Building for Linux arm64..."
-	@GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o $(DIST_DIR)/$(BINARY_NAME)-linux-arm64 .
-	
-	@echo "Building for macOS amd64..."
-	@GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o $(DIST_DIR)/$(BINARY_NAME)-darwin-amd64 .
-	
-	@echo "Building for macOS arm64..."
-	@GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o $(DIST_DIR)/$(BINARY_NAME)-darwin-arm64 .
-	
-	@echo "Building for Windows amd64..."
-	@GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o $(DIST_DIR)/$(BINARY_NAME)-windows-amd64.exe .
-	
-	@echo "Release binaries built in $(DIST_DIR)/"
-	@ls -la $(DIST_DIR)/
+	@goreleaser release --clean
 
 # Example usage targets
 examples: build ## Show example commands

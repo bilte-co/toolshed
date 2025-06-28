@@ -24,6 +24,9 @@ type CLI struct {
 
 	Hash     cli.HashCmd     `cmd:"" help:"Hash operations"`
 	Password cli.PasswordCmd `cmd:"" help:"Password operations"`
+	AES      cli.AESCmd      `cmd:"" help:"AES encryption operations"`
+	ULID     cli.ULIDCmd     `cmd:"" help:"ULID operations"`
+	Serve    cli.ServeCmd    `cmd:"" help:"Start HTTP static file server"`
 }
 
 func main() {

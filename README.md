@@ -1,10 +1,12 @@
 # Toolshed CLI
 
-A production-grade command-line interface for the Toolshed Go utility library, featuring robust hashing operations with enterprise-grade reliability and performance.
+A production-grade command-line interface for the Toolshed Go utility library, featuring robust hashing, ULID generation, password validation, and encryption operations with enterprise-grade reliability and performance.
 
 ## Features
 
 - **Multiple Hash Algorithms**: SHA-256, SHA-512, SHA-1, MD5, BLAKE2b
+- **ULID Generation**: Sortable, time-based unique identifiers with custom prefixes
+- **AES Encryption**: Secure file encryption/decryption with AES-GCM
 - **Flexible Input Sources**: Strings, files, directories, stdin
 - **HMAC Support**: Secure message authentication codes
 - **Hash Validation**: Verify file integrity against expected checksums
@@ -65,6 +67,15 @@ toolshed password check "MySecurePassword123!"
 
 # Check password with custom entropy requirement
 toolshed password check "password" --entropy 50
+
+# Generate ULIDs
+toolshed ulid create
+toolshed ulid create --prefix "user"
+toolshed ulid create --timestamp "2023-01-01T00:00:00Z"
+
+# Extract timestamp from ULID
+toolshed ulid timestamp "user_30KMu42XfVhcsuTE9VgFm"
+toolshed ulid timestamp "user_30KMu42XfVhcsuTE9VgFm" --format unix
 ```
 
 ### Advanced Options
@@ -143,6 +154,36 @@ cat passwords.txt | while read -r pwd; do
 done
 ```
 
+### ULID Operations
+
+```bash
+# Generate a new ULID
+toolshed ulid create
+
+# Generate ULID with prefix
+toolshed ulid create --prefix "user"
+
+# Generate ULID with custom timestamp
+toolshed ulid create --timestamp "2023-01-01T00:00:00Z" --prefix "order"
+
+# Extract timestamp from ULID (RFC3339 format)
+toolshed ulid timestamp "user_30KMu42XfVhcsuTE9VgFm"
+
+# Extract timestamp in Unix format
+toolshed ulid timestamp "user_30KMu42XfVhcsuTE9VgFm" --format unix
+
+# Extract timestamp in Unix milliseconds
+toolshed ulid timestamp "user_30KMu42XfVhcsuTE9VgFm" --format unixmilli
+
+# Extract timestamp from stdin
+echo "user_30KMu42XfVhcsuTE9VgFm" | toolshed ulid timestamp -
+
+# Batch processing ULIDs
+cat ulids.txt | while read -r ulid; do
+  echo "ULID: $ulid, Created: $(echo "$ulid" | toolshed ulid timestamp -)"
+done
+```
+
 ## Security Features
 
 - **Constant-Time Comparison**: Prevents timing attacks when comparing hashes
@@ -177,9 +218,13 @@ toolshed/
 │   ├── context.go       # Shared context
 │   ├── hash.go          # Hash commands
 │   ├── password.go      # Password commands
+│   ├── ulid.go          # ULID commands
+│   ├── aes.go           # AES encryption commands
 │   └── version.go       # Version handling
 ├── hash/                # Hash utility package
 ├── password/            # Password utility package
+├── ulid/                # ULID utility package
+├── aes/                 # AES encryption package
 ├── Makefile             # Build automation
 └── README.md
 ```
