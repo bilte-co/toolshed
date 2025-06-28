@@ -3,8 +3,8 @@ BINARY_NAME=toolshed
 COMMIT?=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 DATE?=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 LDFLAGS=-ldflags "-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
-# VERSION ?= $(shell git describe --tags --abbrev=0)
-VERSION ?= $(shell cat ./VERSTION.txt 2>/dev/null")
+VERSION ?= $(shell git describe --tags --abbrev=0)
+# VERSION ?= $(shell cat ./VERSTION.txt 2>/dev/null")
 NEXT_PATCH := $(shell echo $(VERSION) | awk -F. '{printf "v%d.%d.%d", $$1, $$2, $$3+1}')
 NEXT_MINOR := $(shell echo $(VERSION) | awk -F. '{printf "v%d.%d.0", $$1, $$2+1}')
 NEXT_MAJOR := $(shell echo $(VERSION) | awk -F. '{printf "v%d.0.0", $$1+1}')

@@ -1,9 +1,10 @@
 package cli
 
 import (
+	"crypto/rand"
 	"fmt"
 	"log/slog"
-	"math/rand/v2"
+	"math/big"
 	"net"
 	"net/http"
 	"os"
@@ -102,10 +103,20 @@ func (cmd *ServeCmd) getPort() (int, error) {
 
 	for range maxAttempts {
 		// Generate random port in range
-		port := minPort + rand.IntN(maxPort-minPort+1)
+		bigInt, err := rand.Int(rand.Reader, big.NewInt(int64(maxPort-minPort+1)))
+		if err != nil {
+			return 0, fmt.Errorf("failed to generate random port: %w", err)
+		}
 
-		if err := cmd.checkPortAvailable(port); err == nil {
-			return port, nil
+		randPort, err := rand.Int(rand.Reader, bigInt)
+		if err != nil {
+			return 0, fmt.Errorf("failed to generate random port: %w", err)
+		}
+
+		port := minPort + randPort.Int64()
+
+		if err := cmd.checkPortAvailable(int(port)); err == nil {
+			return int(port), nil
 		}
 	}
 
