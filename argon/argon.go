@@ -1,6 +1,6 @@
 // Package argon provides secure Argon2 password hashing functionality.
 // It supports both Argon2id (recommended) and Argon2i variants with configurable parameters.
-// 
+//
 // Argon2 is a memory-hard key derivation function that won the Password Hashing Competition
 // and is resistant to both time-memory trade-off attacks and side-channel attacks.
 //
@@ -28,6 +28,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"math"
 	"runtime"
 	"strconv"
 	"strings"
@@ -172,14 +173,64 @@ func parseHash(hash string) (Config, []byte, []byte, error) {
 		return Config{}, nil, nil, errors.New("invalid base64 hash")
 	}
 
+	// Validate parameters are within acceptable ranges
+	memoryUint32, err := safeConvertToUint32(memory)
+	if err != nil {
+		return Config{}, nil, nil, fmt.Errorf("invalid memory size: %w", err)
+	}
+
+	iterationsUint32, err := safeConvertToUint32(iterations)
+	if err != nil {
+		return Config{}, nil, nil, fmt.Errorf("invalid iterations count: %w", err)
+	}
+
+	parallelismUint8, err := safeConvertToUint8(parallelism)
+	if err != nil {
+		return Config{}, nil, nil, fmt.Errorf("invalid parallelism count: %w", err)
+	}
+
+	saltLengthUint8, err := safeConvertToUint32(len(salt))
+	if err != nil {
+		return Config{}, nil, nil, fmt.Errorf("invalid salt length: %w", err)
+	}
+
+	keyLengthUint8, err := safeConvertToUint32(len(hashBytes))
+	if err != nil {
+		return Config{}, nil, nil, fmt.Errorf("invalid key length: %w", err)
+	}
+
 	cfg := Config{
 		Type:        argonType,
-		Memory:      uint32(memory),
-		Iterations:  uint32(iterations),
-		Parallelism: uint8(parallelism),
-		SaltLength:  uint32(len(salt)),
-		KeyLength:   uint32(len(hashBytes)),
+		Memory:      memoryUint32,
+		Iterations:  iterationsUint32,
+		Parallelism: parallelismUint8,
+		SaltLength:  saltLengthUint8,
+		KeyLength:   keyLengthUint8,
 	}
 
 	return cfg, salt, hashBytes, nil
+}
+
+// safeConvertToUint32 safely converts an int to uint32, returning an error if the value is out of range.
+func safeConvertToUint32(i int) (uint32, error) {
+	if i < 0 || i > math.MaxUint32 {
+		return 0, fmt.Errorf("invalid value for uint32 conversion: %d", i)
+	}
+	return uint32(i), nil
+}
+
+// safeConvertToUint16 safely converts an int to uint16, returning an error if the value is out of range.
+func safeConvertToUint16(i int) (uint16, error) {
+	if i < 0 || i > math.MaxUint16 {
+		return 0, fmt.Errorf("invalid value for uint16 conversion: %d", i)
+	}
+	return uint16(i), nil
+}
+
+// safeConvertToUint8 safely converts an int to uint8, returning an error if the value is out of range.
+func safeConvertToUint8(i int) (uint8, error) {
+	if i < 0 || i > math.MaxUint8 {
+		return 0, fmt.Errorf("invalid value for uint8 conversion: %d", i)
+	}
+	return uint8(i), nil
 }

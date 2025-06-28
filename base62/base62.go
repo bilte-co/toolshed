@@ -19,9 +19,7 @@ package base62
 
 import (
 	"math"
-	"reflect"
 	"strconv"
-	"unsafe"
 )
 
 type CorruptInputError int64
@@ -174,7 +172,5 @@ func (enc *Encoding) Decode(src []byte) ([]byte, error) {
 
 // DecodeString returns the bytes represented by the base62 string s.
 func (enc *Encoding) DecodeString(s string) ([]byte, error) {
-	sh := (*reflect.StringHeader)(unsafe.Pointer(&s))
-	bh := reflect.SliceHeader{Data: sh.Data, Len: sh.Len, Cap: sh.Len}
-	return enc.Decode(*(*[]byte)(unsafe.Pointer(&bh)))
+	return enc.Decode([]byte(s))
 }

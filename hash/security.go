@@ -21,7 +21,7 @@ import (
 // HMAC computes the HMAC of data using the specified key and algorithm.
 func HMAC(data, key []byte, algorithm string) ([]byte, error) {
 	var hashFunc func() hash.Hash
-	
+
 	algorithm = strings.ToLower(algorithm)
 	switch algorithm {
 	case "md5":
@@ -40,14 +40,14 @@ func HMAC(data, key []byte, algorithm string) ([]byte, error) {
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrUnsupportedAlgorithm, algorithm)
 	}
-	
+
 	mac := hmac.New(hashFunc, key)
 	mac.Write(data)
 	return mac.Sum(nil), nil
 }
 
 // HMACWithOptions computes HMAC with custom output options.
-func HMACWithOptions(data, key []byte, algorithm string, opts Options) (interface{}, error) {
+func HMACWithOptions(data, key []byte, algorithm string, opts Options) (any, error) {
 	result, err := HMAC(data, key, algorithm)
 	if err != nil {
 		return nil, err
@@ -68,14 +68,14 @@ type PasswordHashingOptions struct {
 	PBKDF2KeyLength  int
 	PBKDF2SaltLength int
 	PBKDF2Algorithm  string
-	
+
 	// scrypt options
-	ScryptN        int
-	ScryptR        int
-	ScryptP        int
-	ScryptKeyLen   int
-	ScryptSaltLen  int
-	
+	ScryptN       int
+	ScryptR       int
+	ScryptP       int
+	ScryptKeyLen  int
+	ScryptSaltLen int
+
 	// bcrypt options
 	BcryptCost int
 }
@@ -87,14 +87,14 @@ var DefaultPasswordOptions = PasswordHashingOptions{
 	PBKDF2KeyLength:  32,
 	PBKDF2SaltLength: 16,
 	PBKDF2Algorithm:  "sha256",
-	
+
 	// scrypt defaults (recommended by RFC 7914)
 	ScryptN:       32768, // CPU/memory cost parameter (2^15)
 	ScryptR:       8,     // block size parameter
 	ScryptP:       1,     // parallelization parameter
 	ScryptKeyLen:  32,    // derived key length
 	ScryptSaltLen: 16,    // salt length
-	
+
 	// bcrypt defaults
 	BcryptCost: 12, // cost factor (2^12 iterations)
 }
@@ -104,13 +104,13 @@ func PBKDF2Hash(password []byte, opts *PasswordHashingOptions) ([]byte, []byte, 
 	if opts == nil {
 		opts = &DefaultPasswordOptions
 	}
-	
+
 	// Generate random salt
 	salt := make([]byte, opts.PBKDF2SaltLength)
 	if _, err := rand.Read(salt); err != nil {
 		return nil, nil, fmt.Errorf("failed to generate salt: %w", err)
 	}
-	
+
 	return PBKDF2HashWithSalt(password, salt, opts)
 }
 
@@ -119,7 +119,7 @@ func PBKDF2HashWithSalt(password, salt []byte, opts *PasswordHashingOptions) ([]
 	if opts == nil {
 		opts = &DefaultPasswordOptions
 	}
-	
+
 	var hashFunc func() hash.Hash
 	algorithm := strings.ToLower(opts.PBKDF2Algorithm)
 	switch algorithm {
@@ -139,7 +139,7 @@ func PBKDF2HashWithSalt(password, salt []byte, opts *PasswordHashingOptions) ([]
 	default:
 		return nil, nil, fmt.Errorf("%w: %s", ErrUnsupportedAlgorithm, algorithm)
 	}
-	
+
 	key := pbkdf2.Key(password, salt, opts.PBKDF2Iterations, opts.PBKDF2KeyLength, hashFunc)
 	return key, salt, nil
 }
@@ -158,13 +158,13 @@ func ScryptHash(password []byte, opts *PasswordHashingOptions) ([]byte, []byte, 
 	if opts == nil {
 		opts = &DefaultPasswordOptions
 	}
-	
+
 	// Generate random salt
 	salt := make([]byte, opts.ScryptSaltLen)
 	if _, err := rand.Read(salt); err != nil {
 		return nil, nil, fmt.Errorf("failed to generate salt: %w", err)
 	}
-	
+
 	return ScryptHashWithSalt(password, salt, opts)
 }
 
@@ -173,12 +173,12 @@ func ScryptHashWithSalt(password, salt []byte, opts *PasswordHashingOptions) ([]
 	if opts == nil {
 		opts = &DefaultPasswordOptions
 	}
-	
+
 	key, err := scrypt.Key(password, salt, opts.ScryptN, opts.ScryptR, opts.ScryptP, opts.ScryptKeyLen)
 	if err != nil {
 		return nil, nil, fmt.Errorf("scrypt key derivation failed: %w", err)
 	}
-	
+
 	return key, salt, nil
 }
 
@@ -197,7 +197,7 @@ func BcryptHash(password []byte, opts *PasswordHashingOptions) ([]byte, error) {
 	if opts != nil && opts.BcryptCost > 0 {
 		cost = opts.BcryptCost
 	}
-	
+
 	return bcrypt.GenerateFromPassword(password, cost)
 }
 

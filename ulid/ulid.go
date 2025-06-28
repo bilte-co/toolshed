@@ -26,6 +26,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"errors"
+	"math"
 	"strings"
 	"time"
 
@@ -100,7 +101,12 @@ func Timestamp(id string) (time.Time, error) {
 	// First 6 bytes are the timestamp (48-bit big-endian)
 	timestampMs := binary.BigEndian.Uint64(append([]byte{0, 0}, decoded[:6]...))
 
-	return time.UnixMilli(int64(timestampMs)), nil
+	timestampInt64, err := safeUint64ToInt64(timestampMs)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return time.UnixMilli(timestampInt64), nil
 }
 
 // stripPrefix removes the prefix from a ULID string, if present.
@@ -119,4 +125,12 @@ func stripPrefix(s string) (string, error) {
 	}
 
 	return str, nil
+}
+
+// safeUint64ToInt64 safely converts an uint64 to int64, returning an error if the value is out of range.
+func safeUint64ToInt64(u uint64) (int64, error) {
+	if u > math.MaxInt64 {
+		return 0, errors.New("uint64 value too large for int64")
+	}
+	return int64(u), nil
 }

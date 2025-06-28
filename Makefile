@@ -3,7 +3,8 @@ BINARY_NAME=toolshed
 COMMIT?=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 DATE?=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 LDFLAGS=-ldflags "-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
-VERSION ?= $(shell git describe --tags --abbrev=0)
+# VERSION ?= $(shell git describe --tags --abbrev=0)
+VERSION ?= $(shell cat ./VERSTION.txt 2>/dev/null")
 NEXT_PATCH := $(shell echo $(VERSION) | awk -F. '{printf "v%d.%d.%d", $$1, $$2, $$3+1}')
 NEXT_MINOR := $(shell echo $(VERSION) | awk -F. '{printf "v%d.%d.0", $$1, $$2+1}')
 NEXT_MAJOR := $(shell echo $(VERSION) | awk -F. '{printf "v%d.0.0", $$1+1}')
@@ -31,26 +32,30 @@ tag:
 	git push origin $$VERSION; \
 	echo "Published $$VERSION"
 
-.PHONY: bump-patch
-bump-patch:
-	git tag -a $(NEXT_PATCH) -m "Release $(NEXT_PATCH)"
-	git push origin $(NEXT_PATCH)
+# .PHONY: bump-patch
+# bump-patch:
+# 	git tag -a $(NEXT_PATCH) -m "Release $(NEXT_PATCH)"
+# 	git push origin $(NEXT_PATCH)
 
-.PHONY: bump-minor
-bump-minor:
-	git tag -a $(NEXT_MINOR) -m "Release $(NEXT_MINOR)"
-	git push origin $(NEXT_MINOR)
+# .PHONY: bump-minor
+# bump-minor:
+# 	git tag -a $(NEXT_MINOR) -m "Release $(NEXT_MINOR)"
+# 	git push origin $(NEXT_MINOR)
 
-.PHONY: bump-major
-bump-major:
-	git tag -a $(NEXT_MAJOR) -m "Release $(NEXT_MAJOR)"
-	git push origin $(NEXT_MAJOR)
+# .PHONY: bump-major
+# bump-major:
+# 	git tag -a $(NEXT_MAJOR) -m "Release $(NEXT_MAJOR)"
+# 	git push origin $(NEXT_MAJOR)
 
 build: deps ## Build the binary
 	@echo "Building $(BINARY_NAME)..."
 	@mkdir -p $(BUILD_DIR)
 	@go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) .
 	@echo "Built $(BUILD_DIR)/$(BINARY_NAME)"
+
+modernize: ## Run gopls modernize
+	@echo "Running gopls modernize..."
+	@go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest -fix -test ./...
 
 clean: ## Clean build artifacts
 	@echo "Cleaning..."
@@ -93,11 +98,22 @@ tidy: ## Tidy dependencies
 	@echo "Tidying dependencies..."
 	@go mod tidy
 
+vuln: ## Check for vulnerabilities
+	@echo "Running govulncheck..."
+	@command -v govulncheck >/dev/null 2>&1 || { echo "govulncheck not installed. Install with: go install golang.org/x/vuln/cmd/govulncheck@latest"; exit 1; }
+	@govulncheck ./...
+
+sec: ## Run security checks (requires gosec)
+	@echo "Running gosec..."
+	@command -v gosec >/dev/null 2>&1 || { echo "gosec not installed. Install with: go install github.com/securego/gosec/v2/cmd/gosec@latest"; exit 1; }
+	@gosec ./...
+
+
 dev: deps fmt vet ## Development build and checks
 	@$(MAKE) build
 	@echo "Development build complete"
 
-release: clean deps fmt vet test ## Build release binaries for multiple platforms
+release: clean deps fmt vet vuln sec test ## Build release binaries for multiple platforms
 	@echo "Building release binaries..."
 	@goreleaser release --clean
 

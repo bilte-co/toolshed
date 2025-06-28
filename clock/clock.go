@@ -5,7 +5,7 @@
 // Example usage:
 //
 //	baseDate := time.Date(2023, 12, 25, 0, 0, 0, 0, time.UTC)
-//	
+//
 //	// Parse "1040" as 10:40 AM on December 25, 2023
 //	parsedTime := clock.ParseTimeFromHHMM(baseDate, "1040")
 //	if parsedTime != nil {

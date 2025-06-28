@@ -21,4 +21,4 @@ func (v VersionFlag) BeforeReset(ctx *kong.Context, vars kong.Vars) error {
 }
 
 func (v VersionFlag) Decode(ctx *CLIContext) error { return nil }
-func (v VersionFlag) IsBool() bool               { return true }
+func (v VersionFlag) IsBool() bool                 { return true }

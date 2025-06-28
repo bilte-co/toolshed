@@ -62,7 +62,7 @@ func (cmd *PasswordCheckCmd) Run(ctx *CLIContext) error {
 	if valid {
 		ctx.Logger.Info("Password validation successful")
 		fmt.Println("✓ Password strength is sufficient")
-		
+
 		// If custom entropy was used, show the requirement
 		if cmd.Entropy > 0 {
 			fmt.Printf("  Meets minimum entropy requirement: %.1f\n", cmd.Entropy)
@@ -76,7 +76,7 @@ func (cmd *PasswordCheckCmd) Run(ctx *CLIContext) error {
 	ctx.Logger.Warn("Password validation failed", "reason", message)
 	fmt.Println("✗ Password strength is insufficient")
 	fmt.Printf("  Reason: %s\n", message)
-	
+
 	// Show entropy requirement that was used
 	if cmd.Entropy > 0 {
 		fmt.Printf("  Required entropy: %.1f\n", cmd.Entropy)

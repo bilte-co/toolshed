@@ -15,12 +15,12 @@ import (
 
 // HashCmd represents the hash command group
 type HashCmd struct {
-	String   HashStringCmd   `cmd:"" help:"Hash a string"`
-	File     HashFileCmd     `cmd:"" help:"Hash a file"`
-	Dir      HashDirCmd      `cmd:"" help:"Hash a directory"`
-	HMAC     HMACCmd         `cmd:"" help:"Compute HMAC of data"`
-	Validate ValidateCmd     `cmd:"" help:"Validate file against expected hash"`
-	Compare  CompareCmd      `cmd:"" help:"Compare two hashes using constant-time comparison"`
+	String   HashStringCmd `cmd:"" help:"Hash a string"`
+	File     HashFileCmd   `cmd:"" help:"Hash a file"`
+	Dir      HashDirCmd    `cmd:"" help:"Hash a directory"`
+	HMAC     HMACCmd       `cmd:"" help:"Compute HMAC of data"`
+	Validate ValidateCmd   `cmd:"" help:"Validate file against expected hash"`
+	Compare  CompareCmd    `cmd:"" help:"Compare two hashes using constant-time comparison"`
 }
 
 // HashStringCmd hashes a string

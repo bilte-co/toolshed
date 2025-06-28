@@ -1,6 +1,8 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/bilte-co/toolshed.svg)](https://pkg.go.dev/github.com/bilte-co/toolshed)
+
 # Toolshed CLI
 
-A production-grade command-line interface for the Toolshed Go utility library, featuring robust hashing, ULID generation, password validation, and encryption operations with enterprise-grade reliability and performance.
+A command-line interface for the Toolshed Go utility library, featuring robust hashing, ULID generation, password validation, and encryption operations with enterprise-grade reliability and performance.
 
 ## Features
 
@@ -95,7 +97,7 @@ toolshed --version
 ### Output Formats
 
 - `hex` (default): Hexadecimal encoding
-- `base64`: Base64 encoding  
+- `base64`: Base64 encoding
 - `raw`: Raw bytes (binary output)
 
 Use `--prefix` to include the algorithm name in output (e.g., `sha256:a1b2c3...`).
@@ -146,7 +148,7 @@ toolshed password check "password123" --entropy 70
 
 # Interactive password checking
 toolshed password check
-# Prompts: Enter password to check: 
+# Prompts: Enter password to check:
 
 # Check multiple passwords from file
 cat passwords.txt | while read -r pwd; do
@@ -215,11 +217,12 @@ make fmt lint
 toolshed/
 ├── main.go              # CLI entry point
 ├── internal/cli/        # CLI command implementations
+│   ├── aes.go           # AES encryption commands
 │   ├── context.go       # Shared context
 │   ├── hash.go          # Hash commands
 │   ├── password.go      # Password commands
+│   ├── serve.go         # File server commands
 │   ├── ulid.go          # ULID commands
-│   ├── aes.go           # AES encryption commands
 │   └── version.go       # Version handling
 ├── hash/                # Hash utility package
 ├── password/            # Password utility package

@@ -132,10 +132,10 @@ func TestCache_ConcurrentAccess(t *testing.T) {
 	wg.Add(numGoroutines * 3) // readers, writers, deleters
 
 	// Concurrent readers
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		go func(id int) {
 			defer wg.Done()
-			for j := 0; j < numOperations; j++ {
+			for range numOperations {
 				key := "reader_key"
 				cache.Get(key)
 			}
@@ -143,10 +143,10 @@ func TestCache_ConcurrentAccess(t *testing.T) {
 	}
 
 	// Concurrent writers
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		go func(id int) {
 			defer wg.Done()
-			for j := 0; j < numOperations; j++ {
+			for range numOperations {
 				key := "writer_key"
 				value := "value"
 				cache.Set(key, value)
@@ -155,10 +155,10 @@ func TestCache_ConcurrentAccess(t *testing.T) {
 	}
 
 	// Concurrent deleters
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		go func(id int) {
 			defer wg.Done()
-			for j := 0; j < numOperations; j++ {
+			for range numOperations {
 				key := "delete_key"
 				cache.Delete(key)
 			}
@@ -291,8 +291,7 @@ func BenchmarkCache_Set(b *testing.B) {
 	cache, err := cache.NewCache(ctx)
 	require.NoError(b, err)
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		cache.Set("benchmark_key", "benchmark_value")
 	}
 }
@@ -305,8 +304,7 @@ func BenchmarkCache_Get(b *testing.B) {
 	// Pre-populate cache
 	cache.Set("benchmark_key", "benchmark_value")
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		cache.Get("benchmark_key")
 	}
 }
@@ -316,8 +314,7 @@ func BenchmarkCache_Delete(b *testing.B) {
 	cache, err := cache.NewCache(ctx)
 	require.NoError(b, err)
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		cache.Set("benchmark_key", "benchmark_value")
 		cache.Delete("benchmark_key")
 	}

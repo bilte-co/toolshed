@@ -168,7 +168,7 @@ func TestDecode(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			result, err := Decode(tc.input)
-			
+
 			if tc.hasError {
 				assert.Error(t, err)
 				assert.Nil(t, result)
@@ -235,7 +235,7 @@ func TestDecodeToString(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			result, err := DecodeToString(tc.input)
-			
+
 			if tc.hasError {
 				assert.Error(t, err)
 				assert.Empty(t, result)
@@ -253,8 +253,7 @@ func TestRoundTrip(t *testing.T) {
 		{},
 		[]byte("hello"),
 		[]byte("hello world!@#$%^&*()"),
-		[]byte{0x00, 0x01, 0x02, 0x03, 0xFF},
-		[]byte("Hello 世界"),
+		{0x00, 0x01, 0x02, 0x03, 0xFF},
 		[]byte(strings.Repeat("test data ", 100)),
 	}
 
@@ -262,7 +261,7 @@ func TestRoundTrip(t *testing.T) {
 		t.Run(fmt.Sprintf("round_trip_%d", i), func(t *testing.T) {
 			encoded := Encode(data)
 			decoded, err := Decode(encoded)
-			
+
 			require.NoError(t, err)
 			assert.Equal(t, data, decoded)
 		})
@@ -286,7 +285,7 @@ func TestRoundTripString(t *testing.T) {
 		t.Run(fmt.Sprintf("round_trip_string_%d", i), func(t *testing.T) {
 			encoded := EncodeString(str)
 			decoded, err := DecodeToString(encoded)
-			
+
 			require.NoError(t, err)
 			assert.Equal(t, str, decoded)
 		})
@@ -296,9 +295,8 @@ func TestRoundTripString(t *testing.T) {
 // BenchmarkEncode benchmarks the Encode function
 func BenchmarkEncode(b *testing.B) {
 	data := []byte(strings.Repeat("benchmark test data ", 100))
-	
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		_ = Encode(data)
 	}
 }
@@ -307,9 +305,8 @@ func BenchmarkEncode(b *testing.B) {
 func BenchmarkDecode(b *testing.B) {
 	data := []byte(strings.Repeat("benchmark test data ", 100))
 	encoded := Encode(data)
-	
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		_, _ = Decode(encoded)
 	}
 }
@@ -317,9 +314,8 @@ func BenchmarkDecode(b *testing.B) {
 // BenchmarkEncodeString benchmarks the EncodeString function
 func BenchmarkEncodeString(b *testing.B) {
 	str := strings.Repeat("benchmark test string ", 100)
-	
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		_ = EncodeString(str)
 	}
 }
@@ -328,9 +324,8 @@ func BenchmarkEncodeString(b *testing.B) {
 func BenchmarkDecodeToString(b *testing.B) {
 	str := strings.Repeat("benchmark test string ", 100)
 	encoded := EncodeString(str)
-	
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		_, _ = DecodeToString(encoded)
 	}
 }

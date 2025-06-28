@@ -123,7 +123,7 @@ func (cmd *EncryptCmd) Run(ctx *CLIContext) error {
 	} else {
 		// Sanitize output path
 		cleanOutPath := filepath.Clean(cmd.Output)
-		err := os.WriteFile(cleanOutPath, []byte(ciphertext), 0644)
+		err := os.WriteFile(cleanOutPath, []byte(ciphertext), 0o600)
 		if err != nil {
 			ctx.Logger.Error("Failed to write output file", "path", cleanOutPath, "error", err)
 			return fmt.Errorf("failed to write output file %s: %w", cleanOutPath, err)
@@ -244,7 +244,7 @@ func (cmd *DecryptCmd) Run(ctx *CLIContext) error {
 	} else {
 		// Sanitize output path
 		cleanOutPath := filepath.Clean(cmd.Output)
-		err := os.WriteFile(cleanOutPath, []byte(plaintext), 0644)
+		err := os.WriteFile(cleanOutPath, []byte(plaintext), 0o600)
 		if err != nil {
 			ctx.Logger.Error("Failed to write output file", "path", cleanOutPath, "error", err)
 			return fmt.Errorf("failed to write output file %s: %w", cleanOutPath, err)

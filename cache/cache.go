@@ -39,11 +39,11 @@ type Cache interface {
 	// Get retrieves a value by key from the cache.
 	// Returns the value and true if the key exists, or nil and false if not found.
 	Get(key string) (any, bool)
-	
+
 	// Set stores a value with the specified key in the cache.
 	// Returns true if the operation was successful, false otherwise.
 	Set(key string, value any) bool
-	
+
 	// Delete removes a key-value pair from the cache.
 	// No error is returned if the key doesn't exist.
 	Delete(key string)
@@ -53,7 +53,7 @@ type Cache interface {
 // It uses a map with read-write mutex for concurrent access protection.
 // This implementation does not support TTL or automatic eviction.
 type InMemoryCache struct {
-	mu   sync.RWMutex    // Mutex for protecting concurrent access
+	mu   sync.RWMutex   // Mutex for protecting concurrent access
 	data map[string]any // Internal storage for key-value pairs
 }
 

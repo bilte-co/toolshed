@@ -28,10 +28,10 @@ import (
 var (
 	// ErrUnsupportedAlgorithm is returned when an unsupported hash algorithm is requested.
 	ErrUnsupportedAlgorithm = errors.New("unsupported hash algorithm")
-	
+
 	// ErrInvalidFormat is returned when an invalid output format is requested.
 	ErrInvalidFormat = errors.New("invalid output format")
-	
+
 	// customHashers stores registered custom hash algorithms.
 	customHashers = make(map[string]func() hash.Hash)
 	hasherMutex   sync.RWMutex
@@ -77,7 +77,7 @@ func NewHasher(algorithm string) (*Hasher, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &Hasher{
 		Hash:      h,
 		algorithm: algorithm,
@@ -102,12 +102,12 @@ func (h *Hasher) SumBase64() string {
 // getHasher returns a hash.Hash instance for the specified algorithm.
 func getHasher(algorithm string) (hash.Hash, error) {
 	algorithm = strings.ToLower(algorithm)
-	
+
 	// Warn about insecure algorithms
 	if algorithm == "md5" || algorithm == "sha1" {
 		log.Printf("WARNING: Using insecure hash algorithm %s. Consider using SHA-256 or SHA-512 instead.", algorithm)
 	}
-	
+
 	switch algorithm {
 	case "md5":
 		return md5.New(), nil
@@ -128,11 +128,11 @@ func getHasher(algorithm string) (hash.Hash, error) {
 		hasherMutex.RLock()
 		factory, exists := customHashers[algorithm]
 		hasherMutex.RUnlock()
-		
+
 		if exists {
 			return factory(), nil
 		}
-		
+
 		return nil, fmt.Errorf("%w: %s", ErrUnsupportedAlgorithm, algorithm)
 	}
 }
@@ -145,9 +145,9 @@ func RegisterHasher(name string, factory func() hash.Hash) {
 }
 
 // formatOutput formats the hash bytes according to the specified format and options.
-func formatOutput(data []byte, algorithm string, opts Options) (interface{}, error) {
+func formatOutput(data []byte, algorithm string, opts Options) (any, error) {
 	var result string
-	
+
 	switch opts.Format {
 	case FormatRaw:
 		return data, nil
@@ -158,11 +158,11 @@ func formatOutput(data []byte, algorithm string, opts Options) (interface{}, err
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrInvalidFormat, opts.Format)
 	}
-	
+
 	if opts.Prefix {
 		result = algorithm + ":" + result
 	}
-	
+
 	return result, nil
 }
 
@@ -172,7 +172,7 @@ func HashString(input string, algorithm string) ([]byte, error) {
 }
 
 // HashStringWithOptions hashes a string with custom options.
-func HashStringWithOptions(input string, algorithm string, opts Options) (interface{}, error) {
+func HashStringWithOptions(input string, algorithm string, opts Options) (any, error) {
 	data, err := HashBytes([]byte(input), algorithm)
 	if err != nil {
 		return nil, err
@@ -186,13 +186,13 @@ func HashBytes(input []byte, algorithm string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	h.Write(input)
 	return h.Sum(nil), nil
 }
 
 // HashBytesWithOptions hashes bytes with custom options.
-func HashBytesWithOptions(input []byte, algorithm string, opts Options) (interface{}, error) {
+func HashBytesWithOptions(input []byte, algorithm string, opts Options) (any, error) {
 	data, err := HashBytes(input, algorithm)
 	if err != nil {
 		return nil, err
@@ -206,16 +206,16 @@ func HashReader(r io.Reader, algorithm string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if _, err := io.Copy(h, r); err != nil {
 		return nil, fmt.Errorf("failed to read data: %w", err)
 	}
-	
+
 	return h.Sum(nil), nil
 }
 
 // HashReaderWithOptions hashes an io.Reader with custom options.
-func HashReaderWithOptions(r io.Reader, algorithm string, opts Options) (interface{}, error) {
+func HashReaderWithOptions(r io.Reader, algorithm string, opts Options) (any, error) {
 	data, err := HashReader(r, algorithm)
 	if err != nil {
 		return nil, err
@@ -230,12 +230,12 @@ func HashFile(path string, algorithm string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to open file %s: %w", path, err)
 	}
 	defer file.Close()
-	
+
 	return HashReader(file, algorithm)
 }
 
 // HashFileWithOptions hashes a file with custom options.
-func HashFileWithOptions(path string, algorithm string, opts Options) (interface{}, error) {
+func HashFileWithOptions(path string, algorithm string, opts Options) (any, error) {
 	data, err := HashFile(path, algorithm)
 	if err != nil {
 		return nil, err
@@ -249,41 +249,41 @@ func HashDir(path string, algorithm string, recursive bool) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var files []string
-	
+
 	walkFn := func(filePath string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		
+
 		if d.IsDir() {
 			if !recursive && filePath != path {
 				return filepath.SkipDir
 			}
 			return nil
 		}
-		
+
 		files = append(files, filePath)
 		return nil
 	}
-	
+
 	if err := filepath.WalkDir(path, walkFn); err != nil {
 		return nil, fmt.Errorf("failed to walk directory %s: %w", path, err)
 	}
-	
+
 	// Sort files for deterministic output
 	sort.Strings(files)
-	
+
 	for _, file := range files {
 		relPath, err := filepath.Rel(path, file)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get relative path for %s: %w", file, err)
 		}
-		
+
 		// Write file path to hash
 		h.Write([]byte(relPath))
-		
+
 		// Hash file content
 		fileData, err := HashFile(file, algorithm)
 		if err != nil {
@@ -291,12 +291,12 @@ func HashDir(path string, algorithm string, recursive bool) ([]byte, error) {
 		}
 		h.Write(fileData)
 	}
-	
+
 	return h.Sum(nil), nil
 }
 
 // HashDirWithOptions hashes a directory with custom options.
-func HashDirWithOptions(path string, algorithm string, recursive bool, opts Options) (interface{}, error) {
+func HashDirWithOptions(path string, algorithm string, recursive bool, opts Options) (any, error) {
 	data, err := HashDir(path, algorithm, recursive)
 	if err != nil {
 		return nil, err

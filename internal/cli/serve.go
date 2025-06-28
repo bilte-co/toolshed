@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 	"log/slog"
-	"math/rand"
+	"math/rand/v2"
 	"net"
 	"net/http"
 	"os"
@@ -70,7 +70,7 @@ func (cmd *ServeCmd) Run(ctx *CLIContext) error {
 	// Log startup information
 	absDir, _ := filepath.Abs(cmd.Dir)
 	url := fmt.Sprintf("http://127.0.0.1:%d", port)
-	
+
 	ctx.Logger.Info("Starting HTTP server",
 		"port", port,
 		"directory", absDir,
@@ -100,10 +100,10 @@ func (cmd *ServeCmd) getPort() (int, error) {
 	const maxPort = 8999
 	const maxAttempts = 100
 
-	for attempt := 0; attempt < maxAttempts; attempt++ {
+	for range maxAttempts {
 		// Generate random port in range
-		port := minPort + rand.Intn(maxPort-minPort+1)
-		
+		port := minPort + rand.IntN(maxPort-minPort+1)
+
 		if err := cmd.checkPortAvailable(port); err == nil {
 			return port, nil
 		}
@@ -131,7 +131,7 @@ type secureFileSystem struct {
 func (sfs *secureFileSystem) Open(name string) (http.File, error) {
 	// Clean the path to prevent directory traversal
 	name = filepath.Clean(name)
-	
+
 	// Ensure path doesn't contain .. or other traversal attempts
 	if strings.Contains(name, "..") {
 		return nil, os.ErrNotExist
@@ -154,10 +154,10 @@ func (lh *loggingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	start := time.Now()
-	
+
 	// Serve the request
 	lh.handler.ServeHTTP(recorder, r)
-	
+
 	duration := time.Since(start)
 
 	// Log the request

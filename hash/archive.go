@@ -17,7 +17,7 @@ import (
 // to ensure deterministic results.
 func HashArchive(path string, algorithm string) ([]byte, error) {
 	ext := strings.ToLower(filepath.Ext(path))
-	
+
 	switch {
 	case ext == ".zip":
 		return hashZipArchive(path, algorithm)
@@ -31,7 +31,7 @@ func HashArchive(path string, algorithm string) ([]byte, error) {
 }
 
 // HashArchiveWithOptions hashes an archive with custom options.
-func HashArchiveWithOptions(path string, algorithm string, opts Options) (interface{}, error) {
+func HashArchiveWithOptions(path string, algorithm string, opts Options) (any, error) {
 	data, err := HashArchive(path, algorithm)
 	if err != nil {
 		return nil, err
@@ -52,32 +52,32 @@ func hashZipArchive(path string, algorithm string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to open ZIP archive %s: %w", path, err)
 	}
 	defer reader.Close()
-	
+
 	var entries []archiveEntry
-	
+
 	for _, file := range reader.File {
 		// Skip directories
 		if file.FileInfo().IsDir() {
 			continue
 		}
-		
+
 		rc, err := file.Open()
 		if err != nil {
 			return nil, fmt.Errorf("failed to open file %s in ZIP archive: %w", file.Name, err)
 		}
-		
+
 		data, err := io.ReadAll(rc)
 		rc.Close()
 		if err != nil {
 			return nil, fmt.Errorf("failed to read file %s in ZIP archive: %w", file.Name, err)
 		}
-		
+
 		entries = append(entries, archiveEntry{
 			name: file.Name,
 			data: data,
 		})
 	}
-	
+
 	return hashArchiveEntries(entries, algorithm)
 }
 
@@ -88,13 +88,13 @@ func hashTarGzArchive(path string, algorithm string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to open tar.gz archive %s: %w", path, err)
 	}
 	defer file.Close()
-	
+
 	gzReader, err := gzip.NewReader(file)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gzip reader for %s: %w", path, err)
 	}
 	defer gzReader.Close()
-	
+
 	return hashTarReader(gzReader, algorithm)
 }
 
@@ -105,7 +105,7 @@ func hashTarArchive(path string, algorithm string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to open tar archive %s: %w", path, err)
 	}
 	defer file.Close()
-	
+
 	return hashTarReader(file, algorithm)
 }
 
@@ -113,7 +113,7 @@ func hashTarArchive(path string, algorithm string) ([]byte, error) {
 func hashTarReader(reader io.Reader, algorithm string) ([]byte, error) {
 	tarReader := tar.NewReader(reader)
 	var entries []archiveEntry
-	
+
 	for {
 		header, err := tarReader.Next()
 		if err == io.EOF {
@@ -122,23 +122,23 @@ func hashTarReader(reader io.Reader, algorithm string) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to read tar header: %w", err)
 		}
-		
+
 		// Skip directories and other non-regular files
 		if header.Typeflag != tar.TypeReg {
 			continue
 		}
-		
+
 		data, err := io.ReadAll(tarReader)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read file %s in tar archive: %w", header.Name, err)
 		}
-		
+
 		entries = append(entries, archiveEntry{
 			name: header.Name,
 			data: data,
 		})
 	}
-	
+
 	return hashArchiveEntries(entries, algorithm)
 }
 
@@ -148,18 +148,18 @@ func hashArchiveEntries(entries []archiveEntry, algorithm string) ([]byte, error
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Sort entries by name for deterministic output
 	sort.Slice(entries, func(i, j int) bool {
 		return entries[i].name < entries[j].name
 	})
-	
+
 	// Hash each entry's name and content
 	for _, entry := range entries {
 		h.Write([]byte(entry.name))
 		h.Write(entry.data)
 	}
-	
+
 	return h.Sum(nil), nil
 }
 
@@ -167,7 +167,7 @@ func hashArchiveEntries(entries []archiveEntry, algorithm string) ([]byte, error
 // Supports .gz files.
 func HashCompressedFile(path string, algorithm string) ([]byte, error) {
 	ext := strings.ToLower(filepath.Ext(path))
-	
+
 	switch ext {
 	case ".gz":
 		return hashGzipFile(path, algorithm)
@@ -183,18 +183,18 @@ func hashGzipFile(path string, algorithm string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to open gzip file %s: %w", path, err)
 	}
 	defer file.Close()
-	
+
 	gzReader, err := gzip.NewReader(file)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gzip reader for %s: %w", path, err)
 	}
 	defer gzReader.Close()
-	
+
 	return HashReader(gzReader, algorithm)
 }
 
 // HashCompressedFileWithOptions hashes a compressed file with custom options.
-func HashCompressedFileWithOptions(path string, algorithm string, opts Options) (interface{}, error) {
+func HashCompressedFileWithOptions(path string, algorithm string, opts Options) (any, error) {
 	data, err := HashCompressedFile(path, algorithm)
 	if err != nil {
 		return nil, err
