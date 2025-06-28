@@ -1,3 +1,5 @@
 toolshed
 # Added by goreleaser init:
 dist/
+.env
+.envrc
