@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"log/slog"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -84,21 +85,42 @@ func (cmd *ServeCmd) Run(ctx *CLIContext) error {
 	return server.ListenAndServe()
 }
 
-// getPort returns the specified port or finds an available random port
+// getPort returns the specified port or finds an available random port between 4000-8999
 func (cmd *ServeCmd) getPort() (int, error) {
 	if cmd.Port != 0 {
+		// Check if specified port is available
+		if err := cmd.checkPortAvailable(cmd.Port); err != nil {
+			return 0, fmt.Errorf("specified port %d is not available: %w", cmd.Port, err)
+		}
 		return cmd.Port, nil
 	}
 
-	// Find a random available port >= 1024
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		return 0, err
-	}
-	defer listener.Close()
+	// Find a random available port in range 4000-8999
+	const minPort = 4000
+	const maxPort = 8999
+	const maxAttempts = 100
 
-	addr := listener.Addr().(*net.TCPAddr)
-	return addr.Port, nil
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		// Generate random port in range
+		port := minPort + rand.Intn(maxPort-minPort+1)
+		
+		if err := cmd.checkPortAvailable(port); err == nil {
+			return port, nil
+		}
+	}
+
+	return 0, fmt.Errorf("failed to find available port in range %d-%d after %d attempts", minPort, maxPort, maxAttempts)
+}
+
+// checkPortAvailable checks if a port is available for binding
+func (cmd *ServeCmd) checkPortAvailable(port int) error {
+	addr := fmt.Sprintf("127.0.0.1:%d", port)
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return err
+	}
+	listener.Close()
+	return nil
 }
 
 // secureFileSystem wraps http.Dir to prevent directory traversal
