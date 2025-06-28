@@ -32,20 +32,20 @@ tag:
 	git push origin $$VERSION; \
 	echo "Published $$VERSION"
 
-# .PHONY: bump-patch
-# bump-patch:
-# 	git tag -a $(NEXT_PATCH) -m "Release $(NEXT_PATCH)"
-# 	git push origin $(NEXT_PATCH)
+.PHONY: bump-patch
+bump-patch:
+	git tag -a $(NEXT_PATCH) -m "Release $(NEXT_PATCH)"
+	git push origin $(NEXT_PATCH)
 
-# .PHONY: bump-minor
-# bump-minor:
-# 	git tag -a $(NEXT_MINOR) -m "Release $(NEXT_MINOR)"
-# 	git push origin $(NEXT_MINOR)
+.PHONY: bump-minor
+bump-minor:
+	git tag -a $(NEXT_MINOR) -m "Release $(NEXT_MINOR)"
+	git push origin $(NEXT_MINOR)
 
-# .PHONY: bump-major
-# bump-major:
-# 	git tag -a $(NEXT_MAJOR) -m "Release $(NEXT_MAJOR)"
-# 	git push origin $(NEXT_MAJOR)
+.PHONY: bump-major
+bump-major:
+	git tag -a $(NEXT_MAJOR) -m "Release $(NEXT_MAJOR)"
+	git push origin $(NEXT_MAJOR)
 
 build: deps ## Build the binary
 	@echo "Building $(BINARY_NAME)..."
@@ -108,7 +108,6 @@ sec: ## Run security checks (requires gosec)
 	@command -v gosec >/dev/null 2>&1 || { echo "gosec not installed. Install with: go install github.com/securego/gosec/v2/cmd/gosec@latest"; exit 1; }
 	@gosec ./...
 
-
 dev: deps fmt vet ## Development build and checks
 	@$(MAKE) build
 	@echo "Development build complete"
@@ -116,6 +115,10 @@ dev: deps fmt vet ## Development build and checks
 release: clean deps fmt vet vuln sec test ## Build release binaries for multiple platforms
 	@echo "Building release binaries..."
 	@goreleaser release --clean
+
+doc: ## publish to go doc
+	@echo "Publishing to go doc"
+	GOPROXY=proxy.golang.org go list -m github.com/bilte-co/toolshed@$(VERSION)
 
 # Example usage targets
 examples: build ## Show example commands
