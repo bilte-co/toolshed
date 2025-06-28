@@ -1,4 +1,6 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/bilte-co/toolshed.svg)](https://pkg.go.dev/github.com/bilte-co/toolshed)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bilte-co/toolshed)](https://goreportcard.com/report/github.com/bilte-co/toolshed)
+[![Go Coverage](https://github.com/bilte-co/toolshed/wiki/coverage.svg)](https://raw.githack.com/wiki/bilte-co/toolshed/coverage.html)
 
 # Toolshed CLI
 
