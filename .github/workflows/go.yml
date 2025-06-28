@@ -21,12 +21,10 @@ jobs:
       - name: Build
         run: go build -v ./...
 
-      - name: Test
-        run: go test -v -coverprofile coverage.out ./...
+      - name: Run tests
+        run: go test -coverprofile=coverage.txt
 
-      - name: Update coverage badge
-        uses: ncruces/go-coverage-report@main
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@v5
         with:
-          coverage-file: coverage.out
-          reuse-go: true
-          amend: true
+          token: ${{ secrets.CODECOV_TOKEN }}
