@@ -5,6 +5,8 @@ DATE?=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 LDFLAGS=-ldflags "-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
 VERSION ?= $(shell git describe --tags --abbrev=0)
 NEXT_PATCH := $(shell echo $(VERSION) | awk -F. '{printf "v%d.%d.%d", $$1, $$2, $$3+1}')
+NEXT_MINOR := $(shell echo $(VERSION) | awk -F. '{printf "v%d.%d.0", $$1, $$2+1}')
+NEXT_MAJOR := $(shell echo $(VERSION) | awk -F. '{printf "v%d.0.0", $$1+1}')
 
 # Build settings
 GOOS?=$(shell go env GOOS)
@@ -36,17 +38,13 @@ bump-patch:
 
 .PHONY: bump-minor
 bump-minor:
-	@read -p "Enter new minor version (e.g. v1.5.0): " VERSION; \
-	git tag -a $$VERSION -m "Release $$VERSION"; \
-	git push origin $$VERSION; \
-	echo "Published $$VERSION"
+	git tag -a $(NEXT_MINOR) -m "Release $(NEXT_MINOR)"
+	git push origin $(NEXT_MINOR)
 
 .PHONY: bump-major
 bump-major:
-	@read -p "Enter new major version (e.g. v2.0.0): " VERSION; \
-	git tag -a $$VERSION -m "Release $$VERSION"; \
-	git push origin $$VERSION; \
-	echo "Published $$VERSION"
+	git tag -a $(NEXT_MAJOR) -m "Release $(NEXT_MAJOR)"
+	git push origin $(NEXT_MAJOR)
 
 build: deps ## Build the binary
 	@echo "Building $(BINARY_NAME)..."
