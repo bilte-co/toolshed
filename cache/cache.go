@@ -76,35 +76,3 @@ func NewCache(ctx context.Context) (Cache, error) {
 
 	return cache, nil
 }
-
-// Get retrieves a value from the in-memory cache by key.
-// It uses a read lock to allow concurrent reads while preventing data races.
-// Returns the stored value and true if the key exists, or nil and false if not found.
-func (c *InMemoryCache) Get(key string) (any, bool) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	value, ok := c.data[key]
-	return value, ok
-}
-
-// Set stores a key-value pair in the in-memory cache.
-// It uses a write lock to ensure thread safety during modifications.
-// Returns true to indicate the operation was successful.
-func (c *InMemoryCache) Set(key string, value any) bool {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	c.data[key] = value
-	return true
-}
-
-// Delete removes a key-value pair from the in-memory cache.
-// It uses a write lock to ensure thread safety during modifications.
-// No error is returned if the key doesn't exist.
-func (c *InMemoryCache) Delete(key string) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	delete(c.data, key)
-}
