@@ -315,19 +315,6 @@ func TestNewFromDSN(t *testing.T) {
 			expectError: true,
 		},
 		{
-			name: "empty DSN",
-			dsn:  "",
-			expected: &database.Config{
-				// pgx.ParseConfig with empty string falls back to environment/defaults
-				Name:     "",
-				User:     "inghamemerson", // System user as default
-				Host:     "/private/tmp",  // Unix socket path
-				Port:     "5432",
-				Password: "",
-			},
-			expectError: false,
-		},
-		{
 			name: "DSN without database name",
 			dsn:  "postgres://testuser:testpass@localhost:5432/",
 			expected: &database.Config{
@@ -360,17 +347,6 @@ func TestNewFromDSN(t *testing.T) {
 				Host:     "localhost",
 				Port:     "5432",
 				Password: "p@ss!w@rd",
-			},
-			expectError: false,
-		},
-		{
-			name: "DSN with no user credentials",
-			dsn:  "postgres://localhost:5432/testdb",
-			expected: &database.Config{
-				Name: "testdb",
-				User: "inghamemerson", // Falls back to system user
-				Host: "localhost",
-				Port: "5432",
 			},
 			expectError: false,
 		},
@@ -586,8 +562,8 @@ func TestConfig_ConnectionURL_EdgeCases(t *testing.T) {
 			expected: "postgres://testuser:@localhost:5432/testdb",
 		},
 		{
-			name: "all empty fields",
-			config: &database.Config{},
+			name:     "all empty fields",
+			config:   &database.Config{},
 			expected: "postgres:",
 		},
 	}
