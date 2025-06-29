@@ -285,6 +285,195 @@ func TestCache_EmptyStringKey(t *testing.T) {
 	require.False(t, exists)
 }
 
+func TestCache_SetReturnValue(t *testing.T) {
+	ctx := context.Background()
+	cache, err := cache.NewCache(ctx)
+	require.NoError(t, err)
+
+	// Test that Set always returns true (success)
+	result := cache.Set("test_key", "test_value")
+	require.True(t, result)
+
+	// Test Set with nil value
+	result = cache.Set("nil_key", nil)
+	require.True(t, result)
+
+	// Test Set with empty string value
+	result = cache.Set("empty_key", "")
+	require.True(t, result)
+}
+
+func TestCache_GetReturnValues(t *testing.T) {
+	ctx := context.Background()
+	cache, err := cache.NewCache(ctx)
+	require.NoError(t, err)
+
+	// Test Get with existing key
+	cache.Set("existing_key", "value")
+	value, exists := cache.Get("existing_key")
+	require.True(t, exists)
+	require.Equal(t, "value", value)
+
+	// Test Get with non-existent key returns proper values
+	value, exists = cache.Get("non_existent_key")
+	require.False(t, exists)
+	require.Nil(t, value)
+
+	// Test Get after Delete
+	cache.Delete("existing_key")
+	value, exists = cache.Get("existing_key")
+	require.False(t, exists)
+	require.Nil(t, value)
+}
+
+func TestCache_DeleteIdempotency(t *testing.T) {
+	ctx := context.Background()
+	cache, err := cache.NewCache(ctx)
+	require.NoError(t, err)
+
+	// Set a value first
+	cache.Set("delete_test", "value")
+	
+	// Verify it exists
+	_, exists := cache.Get("delete_test")
+	require.True(t, exists)
+
+	// Delete it
+	cache.Delete("delete_test")
+	
+	// Verify it's gone
+	_, exists = cache.Get("delete_test")
+	require.False(t, exists)
+
+	// Delete again - should not panic or error
+	require.NotPanics(t, func() {
+		cache.Delete("delete_test")
+	})
+
+	// Multiple deletes of same key
+	require.NotPanics(t, func() {
+		cache.Delete("delete_test")
+		cache.Delete("delete_test")
+		cache.Delete("delete_test")
+	})
+}
+
+func TestCache_SetOverwriteBehavior(t *testing.T) {
+	ctx := context.Background()
+	cache, err := cache.NewCache(ctx)
+	require.NoError(t, err)
+
+	// Set initial value
+	result := cache.Set("overwrite_key", "original_value")
+	require.True(t, result)
+
+	// Verify initial value
+	value, exists := cache.Get("overwrite_key")
+	require.True(t, exists)
+	require.Equal(t, "original_value", value)
+
+	// Overwrite with different type
+	result = cache.Set("overwrite_key", 42)
+	require.True(t, result)
+
+	// Verify overwritten value
+	value, exists = cache.Get("overwrite_key")
+	require.True(t, exists)
+	require.Equal(t, 42, value)
+
+	// Overwrite with nil
+	result = cache.Set("overwrite_key", nil)
+	require.True(t, result)
+
+	// Verify nil value
+	value, exists = cache.Get("overwrite_key")
+	require.True(t, exists)
+	require.Nil(t, value)
+}
+
+func TestCache_GetAfterSetSequence(t *testing.T) {
+	ctx := context.Background()
+	cache, err := cache.NewCache(ctx)
+	require.NoError(t, err)
+
+	testCases := []struct {
+		name  string
+		key   string
+		value any
+	}{
+		{"string_value", "str_key", "hello world"},
+		{"integer_value", "int_key", 123},
+		{"boolean_value", "bool_key", false},
+		{"slice_value", "slice_key", []int{1, 2, 3}},
+		{"nil_value", "nil_key", nil},
+		{"empty_string", "empty_key", ""},
+		{"zero_int", "zero_key", 0},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Set the value
+			result := cache.Set(tc.key, tc.value)
+			require.True(t, result)
+
+			// Immediately get the value
+			retrievedValue, exists := cache.Get(tc.key)
+			require.True(t, exists)
+			require.Equal(t, tc.value, retrievedValue)
+		})
+	}
+}
+
+func TestCache_DeleteNonExistentKeys(t *testing.T) {
+	ctx := context.Background()
+	cache, err := cache.NewCache(ctx)
+	require.NoError(t, err)
+
+	// Delete keys that never existed
+	nonExistentKeys := []string{
+		"never_existed",
+		"also_never_existed",
+		"",
+		"key_with_special_chars_!@#$%",
+		"very_long_key_" + string(make([]byte, 1000)),
+	}
+
+	for _, key := range nonExistentKeys {
+		require.NotPanics(t, func() {
+			cache.Delete(key)
+		})
+	}
+}
+
+func TestCache_SetGetDeleteCycle(t *testing.T) {
+	ctx := context.Background()
+	cache, err := cache.NewCache(ctx)
+	require.NoError(t, err)
+
+	key := "cycle_test"
+	values := []any{"first", 42, true, nil, []string{"a", "b"}}
+
+	for i, value := range values {
+		t.Run(string(rune('A'+i)), func(t *testing.T) {
+			// Set
+			result := cache.Set(key, value)
+			require.True(t, result)
+
+			// Get
+			retrievedValue, exists := cache.Get(key)
+			require.True(t, exists)
+			require.Equal(t, value, retrievedValue)
+
+			// Delete
+			cache.Delete(key)
+
+			// Verify deletion
+			_, exists = cache.Get(key)
+			require.False(t, exists)
+		})
+	}
+}
+
 // Benchmark tests
 func BenchmarkCache_Set(b *testing.B) {
 	ctx := context.Background()

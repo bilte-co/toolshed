@@ -186,6 +186,86 @@ func TestNewConfigFromEnv_WithDSN(t *testing.T) {
 	assert.Equal(t, "testpass", config.Password)
 }
 
+func TestNewConfigFromEnv_EdgeCases(t *testing.T) {
+	tests := []struct {
+		name     string
+		envVars  map[string]string
+		expected *database.Config
+	}{
+		{
+			name:    "completely empty environment",
+			envVars: map[string]string{},
+			expected: &database.Config{
+				ConnectionTimeout: 0,
+				PoolMaxConnLife:   5 * time.Minute,
+				PoolMaxConnIdle:   1 * time.Minute,
+				PoolHealthCheck:   1 * time.Minute,
+			},
+		},
+		{
+			name: "negative timeout value",
+			envVars: map[string]string{
+				"DB_CONNECT_TIMEOUT": "-30",
+			},
+			expected: &database.Config{
+				ConnectionTimeout: -30,
+				PoolMaxConnLife:   5 * time.Minute,
+				PoolMaxConnIdle:   1 * time.Minute,
+				PoolHealthCheck:   1 * time.Minute,
+			},
+		},
+		{
+			name: "zero timeout value",
+			envVars: map[string]string{
+				"DB_CONNECT_TIMEOUT": "0",
+			},
+			expected: &database.Config{
+				ConnectionTimeout: 0,
+				PoolMaxConnLife:   5 * time.Minute,
+				PoolMaxConnIdle:   1 * time.Minute,
+				PoolHealthCheck:   1 * time.Minute,
+			},
+		},
+		{
+			name: "invalid DSN in DB_DSN",
+			envVars: map[string]string{
+				"DB_DSN":  "invalid-dsn-format",
+				"DB_NAME": "fallback-db", // These should be ignored when DSN is present
+				"DB_USER": "fallback-user",
+			},
+			expected: nil, // Should return nil when DSN parsing fails
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clearEnv()
+			defer clearEnv()
+
+			for key, value := range tt.envVars {
+				os.Setenv(key, value)
+			}
+
+			config := database.NewConfigFromEnv()
+
+			if tt.expected == nil {
+				assert.Nil(t, config)
+			} else {
+				require.NotNil(t, config)
+				assert.Equal(t, tt.expected.Name, config.Name)
+				assert.Equal(t, tt.expected.User, config.User)
+				assert.Equal(t, tt.expected.Host, config.Host)
+				assert.Equal(t, tt.expected.Port, config.Port)
+				assert.Equal(t, tt.expected.Password, config.Password)
+				assert.Equal(t, tt.expected.ConnectionTimeout, config.ConnectionTimeout)
+				assert.Equal(t, tt.expected.PoolMaxConnLife, config.PoolMaxConnLife)
+				assert.Equal(t, tt.expected.PoolMaxConnIdle, config.PoolMaxConnIdle)
+				assert.Equal(t, tt.expected.PoolHealthCheck, config.PoolHealthCheck)
+			}
+		})
+	}
+}
+
 func TestNewFromDSN(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -233,6 +313,78 @@ func TestNewFromDSN(t *testing.T) {
 			dsn:         "invalid-dsn",
 			expected:    nil,
 			expectError: true,
+		},
+		{
+			name: "empty DSN",
+			dsn:  "",
+			expected: &database.Config{
+				// pgx.ParseConfig with empty string falls back to environment/defaults
+				Name:     "",
+				User:     "inghamemerson", // System user as default
+				Host:     "/private/tmp",  // Unix socket path
+				Port:     "5432",
+				Password: "",
+			},
+			expectError: false,
+		},
+		{
+			name: "DSN without database name",
+			dsn:  "postgres://testuser:testpass@localhost:5432/",
+			expected: &database.Config{
+				Name:     "",
+				User:     "testuser",
+				Host:     "localhost",
+				Port:     "5432",
+				Password: "testpass",
+			},
+			expectError: false,
+		},
+		{
+			name: "DSN with IPv6 host",
+			dsn:  "postgres://testuser:testpass@[::1]:5432/testdb",
+			expected: &database.Config{
+				Name:     "testdb",
+				User:     "testuser",
+				Host:     "::1",
+				Port:     "5432",
+				Password: "testpass",
+			},
+			expectError: false,
+		},
+		{
+			name: "DSN with special characters in password",
+			dsn:  "postgres://testuser:p%40ss%21w%40rd@localhost:5432/testdb",
+			expected: &database.Config{
+				Name:     "testdb",
+				User:     "testuser",
+				Host:     "localhost",
+				Port:     "5432",
+				Password: "p@ss!w@rd",
+			},
+			expectError: false,
+		},
+		{
+			name: "DSN with no user credentials",
+			dsn:  "postgres://localhost:5432/testdb",
+			expected: &database.Config{
+				Name: "testdb",
+				User: "inghamemerson", // Falls back to system user
+				Host: "localhost",
+				Port: "5432",
+			},
+			expectError: false,
+		},
+		{
+			name: "DSN with default port",
+			dsn:  "postgres://testuser:testpass@localhost/testdb",
+			expected: &database.Config{
+				Name:     "testdb",
+				User:     "testuser",
+				Host:     "localhost",
+				Port:     "5432",
+				Password: "testpass",
+			},
+			expectError: false,
 		},
 	}
 
@@ -350,6 +502,93 @@ func TestConfig_ConnectionURL(t *testing.T) {
 				SSLRootCertPath:   "/path/to/ca.pem",
 			},
 			expected: "postgres://testuser:testpass@localhost:5432/testdb?connect_timeout=30&sslcert=%2Fpath%2Fto%2Fcert.pem&sslkey=%2Fpath%2Fto%2Fkey.pem&sslmode=require&sslrootcert=%2Fpath%2Fto%2Fca.pem",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.config.ConnectionURL()
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestConfig_ConnectionURL_EdgeCases(t *testing.T) {
+	tests := []struct {
+		name     string
+		config   *database.Config
+		expected string
+	}{
+		{
+			name: "with empty database name",
+			config: &database.Config{
+				User:     "testuser",
+				Host:     "localhost",
+				Port:     "5432",
+				Password: "testpass",
+			},
+			expected: "postgres://testuser:testpass@localhost:5432",
+		},
+		{
+			name: "with zero timeout",
+			config: &database.Config{
+				Name:              "testdb",
+				User:              "testuser",
+				Host:              "localhost",
+				Port:              "5432",
+				Password:          "testpass",
+				ConnectionTimeout: 0,
+			},
+			expected: "postgres://testuser:testpass@localhost:5432/testdb",
+		},
+		{
+			name: "with negative timeout",
+			config: &database.Config{
+				Name:              "testdb",
+				User:              "testuser",
+				Host:              "localhost",
+				Port:              "5432",
+				Password:          "testpass",
+				ConnectionTimeout: -30,
+			},
+			expected: "postgres://testuser:testpass@localhost:5432/testdb",
+		},
+		{
+			name: "with special characters in database name",
+			config: &database.Config{
+				Name:     "test-db_name",
+				User:     "testuser",
+				Host:     "localhost",
+				Port:     "5432",
+				Password: "testpass",
+			},
+			expected: "postgres://testuser:testpass@localhost:5432/test-db_name",
+		},
+		{
+			name: "with IPv6 host",
+			config: &database.Config{
+				Name:     "testdb",
+				User:     "testuser",
+				Host:     "::1",
+				Port:     "5432",
+				Password: "testpass",
+			},
+			expected: "postgres://testuser:testpass@::1:5432/testdb",
+		},
+		{
+			name: "with only user, no password",
+			config: &database.Config{
+				Name: "testdb",
+				User: "testuser",
+				Host: "localhost",
+				Port: "5432",
+			},
+			expected: "postgres://testuser:@localhost:5432/testdb",
+		},
+		{
+			name: "all empty fields",
+			config: &database.Config{},
+			expected: "postgres:",
 		},
 	}
 

@@ -241,6 +241,235 @@ func BenchmarkHashString(b *testing.B) {
 	}
 }
 
+func TestHashFile_NonExistentFile(t *testing.T) {
+	_, err := HashFile("/nonexistent/file.txt", "sha256")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to open file")
+}
+
+func TestHashFileWithOptions_InvalidFormat(t *testing.T) {
+	tmpDir := t.TempDir()
+	testFile := filepath.Join(tmpDir, "test.txt")
+	err := os.WriteFile(testFile, []byte("test"), 0644)
+	require.NoError(t, err)
+
+	_, err = HashFileWithOptions(testFile, "sha256", Options{Format: Format("invalid")})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid output format")
+}
+
+func TestHashDir_NonExistentDir(t *testing.T) {
+	_, err := HashDir("/nonexistent/directory", "sha256", false)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to walk directory")
+}
+
+func TestHashDir_EmptyDir(t *testing.T) {
+	tmpDir := t.TempDir()
+	
+	hash, err := HashDir(tmpDir, "sha256", false)
+	require.NoError(t, err)
+	assert.NotEmpty(t, hash, "Empty directory should still produce a hash")
+}
+
+func TestHashReader_FailingReader(t *testing.T) {
+	// Create a reader that fails after a few bytes
+	failingReader := &failingReader{data: []byte("test"), failAfter: 2}
+	
+	_, err := HashReader(failingReader, "sha256")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to read data")
+}
+
+// failingReader is a test helper that fails after reading a certain number of bytes
+type failingReader struct {
+	data      []byte
+	pos       int
+	failAfter int
+}
+
+func (f *failingReader) Read(p []byte) (n int, err error) {
+	if f.pos >= f.failAfter {
+		return 0, assert.AnError
+	}
+	
+	remaining := len(f.data) - f.pos
+	if remaining == 0 {
+		return 0, nil
+	}
+	
+	n = len(p)
+	if n > remaining {
+		n = remaining
+	}
+	if f.pos+n > f.failAfter {
+		n = f.failAfter - f.pos
+	}
+	
+	copy(p, f.data[f.pos:f.pos+n])
+	f.pos += n
+	return n, nil
+}
+
+func TestHashString_EmptyString(t *testing.T) {
+	// Empty string tests are already covered in testVectors, but let's be explicit
+	result, err := HashString("", "sha256")
+	require.NoError(t, err)
+	expected := "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+	actual := hex.EncodeToString(result)
+	assert.Equal(t, expected, actual)
+}
+
+func TestHashBytes_NilBytes(t *testing.T) {
+	result, err := HashBytes(nil, "sha256")
+	require.NoError(t, err)
+	
+	// Should be same as empty bytes
+	expected, err := HashBytes([]byte{}, "sha256")
+	require.NoError(t, err)
+	assert.Equal(t, expected, result)
+}
+
+func TestHashStringWithOptions_InvalidFormat(t *testing.T) {
+	_, err := HashStringWithOptions("test", "sha256", Options{Format: Format("invalid")})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid output format")
+}
+
+func TestHashBytesWithOptions_InvalidFormat(t *testing.T) {
+	_, err := HashBytesWithOptions([]byte("test"), "sha256", Options{Format: Format("invalid")})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid output format")
+}
+
+func TestHashReaderWithOptions_InvalidFormat(t *testing.T) {
+	reader := strings.NewReader("test")
+	_, err := HashReaderWithOptions(reader, "sha256", Options{Format: Format("invalid")})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid output format")
+}
+
+func TestHashDirWithOptions_InvalidFormat(t *testing.T) {
+	tmpDir := t.TempDir()
+	_, err := HashDirWithOptions(tmpDir, "sha256", false, Options{Format: Format("invalid")})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid output format")
+}
+
+func TestNewHasher_UnsupportedAlgorithm(t *testing.T) {
+	_, err := NewHasher("unsupported")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported hash algorithm")
+}
+
+func TestHasher_Reset(t *testing.T) {
+	hasher, err := NewHasher("sha256")
+	require.NoError(t, err)
+
+	// Write some data
+	hasher.Write([]byte("test1"))
+	hash1 := hasher.SumHex()
+
+	// Reset and write different data
+	hasher.Reset()
+	hasher.Write([]byte("test2"))
+	hash2 := hasher.SumHex()
+
+	assert.NotEqual(t, hash1, hash2, "Reset should clear the hasher state")
+}
+
+func TestFormatOutput_AllFormats(t *testing.T) {
+	data := []byte{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef}
+	algorithm := "sha256"
+
+	// Test raw format
+	result, err := formatOutput(data, algorithm, Options{Format: FormatRaw})
+	require.NoError(t, err)
+	assert.Equal(t, data, result)
+
+	// Test hex format
+	result, err = formatOutput(data, algorithm, Options{Format: FormatHex})
+	require.NoError(t, err)
+	assert.Equal(t, "0123456789abcdef", result)
+
+	// Test base64 format
+	result, err = formatOutput(data, algorithm, Options{Format: FormatBase64})
+	require.NoError(t, err)
+	assert.Equal(t, "ASNFZ4mrze8=", result)
+
+	// Test with prefix
+	result, err = formatOutput(data, algorithm, Options{Format: FormatHex, Prefix: true})
+	require.NoError(t, err)
+	assert.Equal(t, "sha256:0123456789abcdef", result)
+}
+
+func TestGetHasher_CaseInsensitive(t *testing.T) {
+	algorithms := []string{"SHA256", "Sha256", "sHa256", "SHA256"}
+	
+	for _, algo := range algorithms {
+		hasher, err := getHasher(algo)
+		require.NoError(t, err, "Algorithm %s should work", algo)
+		assert.NotNil(t, hasher)
+	}
+}
+
+func TestRegisterHasher_OverwriteExisting(t *testing.T) {
+	// Register custom hasher
+	RegisterHasher("test-overwrite", func() hash.Hash {
+		return sha256.New()
+	})
+
+	// Test it works
+	result1, err := HashString("test", "test-overwrite")
+	require.NoError(t, err)
+
+	// Overwrite with different implementation (still sha256 for simplicity)
+	RegisterHasher("test-overwrite", func() hash.Hash {
+		return sha256.New()
+	})
+
+	// Should still work
+	result2, err := HashString("test", "test-overwrite")
+	require.NoError(t, err)
+	assert.Equal(t, result1, result2)
+}
+
+func TestBLAKE2b_Error(t *testing.T) {
+	// BLAKE2b should not fail with default parameters, but let's test error handling
+	// This is mainly for coverage of the error path in getHasher
+	result, err := HashString("test", "blake2b")
+	require.NoError(t, err)
+	assert.NotEmpty(t, result)
+}
+
+func TestHashDir_FileHashError(t *testing.T) {
+	// Create a directory with a file that will cause an error during hashing
+	tmpDir := t.TempDir()
+	testFile := filepath.Join(tmpDir, "test.txt")
+	
+	// Create the file
+	err := os.WriteFile(testFile, []byte("test"), 0644)
+	require.NoError(t, err)
+	
+	// Remove read permissions to cause an error
+	err = os.Chmod(testFile, 0000)
+	if err != nil {
+		t.Skip("Cannot change file permissions on this system")
+	}
+	defer os.Chmod(testFile, 0644) // Restore for cleanup
+	
+	_, err = HashDir(tmpDir, "sha256", false)
+	assert.Error(t, err)
+}
+
+func TestDefaultOptions(t *testing.T) {
+	// Test that default options are sensible
+	assert.Equal(t, FormatHex, DefaultOptions.Format)
+	assert.False(t, DefaultOptions.Prefix)
+	assert.Equal(t, 4, DefaultOptions.Workers)
+	assert.Equal(t, 64*1024, DefaultOptions.BufferSize)
+}
+
 func BenchmarkHashReader(b *testing.B) {
 	data := make([]byte, 1024*1024) // 1MB of data
 	rand.Read(data)

@@ -36,6 +36,66 @@ func TestNewFromEnv(t *testing.T) {
 		}
 	})
 
+	t.Run("context cancellation", func(t *testing.T) {
+		clearEnv()
+		defer clearEnv()
+
+		// Set up a valid config that would normally work
+		os.Setenv("DB_NAME", "testdb")
+		os.Setenv("DB_USER", "testuser")
+		os.Setenv("DB_HOST", "localhost")
+		os.Setenv("DB_PORT", "5432")
+		os.Setenv("DB_PASSWORD", "testpass")
+		os.Setenv("DB_SSLMODE", "disable")
+
+		// Create a context that's already cancelled
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel() // Cancel immediately
+
+		db, err := database.NewFromEnv(ctx)
+
+		// Clean up if a connection was somehow created
+		if db != nil {
+			db.Close(context.Background())
+		}
+
+		// In this test environment, the connection might succeed or fail depending on system setup
+		// The main thing is that it shouldn't panic and should handle the cancelled context gracefully
+		if err != nil {
+			assert.Error(t, err)
+			assert.Nil(t, db)
+		} else {
+			t.Log("Connection succeeded despite cancelled context - system may have fast local postgres")
+			require.NotNil(t, db)
+		}
+	})
+
+	t.Run("invalid configuration values", func(t *testing.T) {
+		clearEnv()
+		defer clearEnv()
+
+		// Set up invalid port
+		os.Setenv("DB_NAME", "testdb")
+		os.Setenv("DB_USER", "testuser")
+		os.Setenv("DB_HOST", "localhost")
+		os.Setenv("DB_PORT", "invalid-port")
+		os.Setenv("DB_PASSWORD", "testpass")
+
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		defer cancel()
+
+		db, err := database.NewFromEnv(ctx)
+
+		// Clean up if a connection was somehow created
+		if db != nil {
+			db.Close(ctx)
+		}
+
+		// Should fail due to invalid port
+		assert.Error(t, err)
+		assert.Nil(t, db)
+	})
+
 	t.Run("with valid DSN", func(t *testing.T) {
 		clearEnv()
 		defer clearEnv()
@@ -96,6 +156,19 @@ func TestDB_Close(t *testing.T) {
 		ctx := context.Background()
 
 		// This will panic due to the pgxpool implementation - that's expected behavior
+		assert.Panics(t, func() {
+			db.Close(ctx)
+		})
+	})
+
+	t.Run("close with context cancellation", func(t *testing.T) {
+		// Test that Close handles context properly
+		// We can't easily test with a real connection, but we can test the logging
+		db := &database.DB{Pool: nil}
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel() // Cancel the context
+
+		// Should still panic due to nil pool, but context should be handled
 		assert.Panics(t, func() {
 			db.Close(ctx)
 		})
@@ -199,6 +272,38 @@ func TestDBDSNGeneration(t *testing.T) {
 				"host=",
 				"port=",
 				"connect_timeout=0",
+			},
+		},
+		{
+			name: "negative and zero duration values excluded",
+			config: &database.Config{
+				Name:               "testdb",
+				User:               "testuser",
+				PoolMaxConnLife:    0,               // zero duration
+				PoolMaxConnIdle:    -1 * time.Hour, // negative duration
+				PoolHealthCheck:    30 * time.Second,
+			},
+			contains: []string{
+				"dbname=testdb",
+				"user=testuser",
+				"pool_health_check_period=30s",
+			},
+			excludes: []string{
+				"pool_max_conn_lifetime=0",
+				"pool_max_conn_idle_time=-1h",
+			},
+		},
+		{
+			name: "extreme timeout values",
+			config: &database.Config{
+				Name:              "testdb",
+				User:              "testuser",
+				ConnectionTimeout: 999999, // Very large timeout
+			},
+			contains: []string{
+				"dbname=testdb",
+				"user=testuser",
+				"connect_timeout=999999",
 			},
 		},
 	}

@@ -1,6 +1,7 @@
 package base64
 
 import (
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"testing"
@@ -327,5 +328,141 @@ func BenchmarkDecodeToString(b *testing.B) {
 
 	for b.Loop() {
 		_, _ = DecodeToString(encoded)
+	}
+}
+
+// TestEncodeNil tests encoding nil byte slice
+func TestEncodeNil(t *testing.T) {
+	result := Encode(nil)
+	require.Equal(t, "", result)
+}
+
+// TestDecodeEdgeCases tests additional edge cases for decoding
+func TestDecodeEdgeCases(t *testing.T) {
+	testCases := []struct {
+		name        string
+		input       string
+		expectedErr string
+	}{
+		{
+			name:        "non-printable characters",
+			input:       "aGVs\x00bG8=",
+			expectedErr: "invalid base64 input",
+		},
+		{
+			name:        "mixed case with invalid chars",
+			input:       "aGVsbG8+world",
+			expectedErr: "invalid base64 input",
+		},
+		{
+			name:        "string with only whitespace",
+			input:       "   \t\n   ",
+			expectedErr: "",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := Decode(tc.input)
+
+			if tc.expectedErr != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tc.expectedErr)
+				require.Nil(t, result)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, []byte{}, result)
+			}
+		})
+	}
+}
+
+// TestDecodeToStringEdgeCases tests additional edge cases for DecodeToString
+func TestDecodeToStringEdgeCases(t *testing.T) {
+	testCases := []struct {
+		name        string
+		input       string
+		expectedErr string
+	}{
+		{
+			name:        "very long invalid input",
+			input:       strings.Repeat("invalid@", 1000),
+			expectedErr: "invalid base64 input",
+		},
+		{
+			name:        "mixed valid and invalid",
+			input:       "aGVsbG8@invalid",
+			expectedErr: "invalid base64 input",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := DecodeToString(tc.input)
+
+			require.Error(t, err)
+			require.Contains(t, err.Error(), tc.expectedErr)
+			require.Empty(t, result)
+		})
+	}
+}
+
+// TestLargeData tests encoding/decoding of large data
+func TestLargeData(t *testing.T) {
+	// Test with 1MB of data
+	largeData := make([]byte, 1024*1024)
+	for i := range largeData {
+		largeData[i] = byte(i % 256)
+	}
+
+	encoded := Encode(largeData)
+	require.NotEmpty(t, encoded)
+
+	decoded, err := Decode(encoded)
+	require.NoError(t, err)
+	require.Equal(t, largeData, decoded)
+}
+
+// TestSpecialCharacters tests encoding/decoding of all possible byte values
+func TestSpecialCharacters(t *testing.T) {
+	// Test all byte values 0-255
+	allBytes := make([]byte, 256)
+	for i := 0; i < 256; i++ {
+		allBytes[i] = byte(i)
+	}
+
+	encoded := Encode(allBytes)
+	require.NotEmpty(t, encoded)
+
+	decoded, err := Decode(encoded)
+	require.NoError(t, err)
+	require.Equal(t, allBytes, decoded)
+}
+
+// TestConsistencyWithStandardLibrary ensures our functions behave the same as stdlib
+func TestConsistencyWithStandardLibrary(t *testing.T) {
+	testData := [][]byte{
+		{},
+		{0},
+		{255},
+		[]byte("test"),
+		[]byte("Hello, 世界!"),
+		{0x00, 0x01, 0x02, 0x03, 0xFF, 0xFE, 0xFD},
+	}
+
+	for i, data := range testData {
+		t.Run(fmt.Sprintf("consistency_%d", i), func(t *testing.T) {
+			// Compare our Encode with stdlib
+			ourResult := Encode(data)
+			stdResult := base64.StdEncoding.EncodeToString(data)
+			require.Equal(t, stdResult, ourResult)
+
+			// Compare our Decode with stdlib (when valid)
+			if len(ourResult) > 0 || len(data) == 0 {
+				decoded, err := Decode(ourResult)
+				require.NoError(t, err)
+				require.Equal(t, data, decoded)
+			}
+		})
 	}
 }
