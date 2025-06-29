@@ -11,6 +11,9 @@ import (
 	"github.com/bilte-co/toolshed/password"
 )
 
+// ExitFunc allows mocking os.Exit for testing
+var ExitFunc = os.Exit
+
 // PasswordCmd represents the password command group
 type PasswordCmd struct {
 	Check PasswordCheckCmd `cmd:"" help:"Check password strength"`
@@ -85,7 +88,7 @@ func (cmd *PasswordCheckCmd) Run(ctx *CLIContext) error {
 	}
 
 	// Exit with non-zero code on validation failure
-	os.Exit(1)
+	ExitFunc(1)
 	return nil
 }
 

@@ -7,6 +7,7 @@ import (
 
 	"github.com/bilte-co/toolshed/aes"
 	"github.com/bilte-co/toolshed/internal/cli"
+	"github.com/bilte-co/toolshed/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,7 +24,7 @@ func TestGenerateKeyCmd_ValidEntropy(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := &cli.GenerateKeyCmd{Entropy: tt.entropy}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.NoError(t, err)
@@ -47,7 +48,7 @@ func TestGenerateKeyCmd_InvalidEntropy(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := &cli.GenerateKeyCmd{Entropy: tt.entropy}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.Error(t, err)
@@ -73,7 +74,7 @@ func TestEncryptCmd_FileToStdout(t *testing.T) {
 		File: inputFile,
 		Key:  key,
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.NoError(t, err)
@@ -96,7 +97,7 @@ func TestEncryptCmd_FileToFile(t *testing.T) {
 		Key:    key,
 		Output: outputFile,
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.NoError(t, err)
@@ -120,7 +121,7 @@ func TestEncryptCmd_StdinToStdout(t *testing.T) {
 		File: "-",
 		Key:  key,
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	// Mock stdin
 	oldStdin := os.Stdin
@@ -156,7 +157,7 @@ func TestEncryptCmd_MissingKey(t *testing.T) {
 		File: inputFile,
 		// No key provided
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.Error(t, err)
@@ -182,7 +183,7 @@ func TestEncryptCmd_KeyFromEnvironment(t *testing.T) {
 		File: inputFile,
 		// Key will come from environment
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.NoError(t, err)
@@ -196,7 +197,7 @@ func TestEncryptCmd_NonexistentFile(t *testing.T) {
 		File: "/nonexistent/file.txt",
 		Key:  key,
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.Error(t, err)
@@ -222,7 +223,7 @@ func TestDecryptCmd_FileToStdout(t *testing.T) {
 		File: inputFile,
 		Key:  key,
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.NoError(t, err)
@@ -249,7 +250,7 @@ func TestDecryptCmd_FileToFile(t *testing.T) {
 		Key:    key,
 		Output: outputFile,
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.NoError(t, err)
@@ -272,7 +273,7 @@ func TestDecryptCmd_StdinToStdout(t *testing.T) {
 		File: "-",
 		Key:  key,
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	// Mock stdin
 	oldStdin := os.Stdin
@@ -301,7 +302,7 @@ func TestDecryptCmd_EmptyInput(t *testing.T) {
 		File: "-",
 		Key:  key,
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	// Mock empty stdin
 	oldStdin := os.Stdin
@@ -333,7 +334,7 @@ func TestDecryptCmd_InvalidCiphertext(t *testing.T) {
 		File: inputFile,
 		Key:  key,
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.Error(t, err)
@@ -363,7 +364,7 @@ func TestDecryptCmd_WrongKey(t *testing.T) {
 		File: inputFile,
 		Key:  key2,
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.Error(t, err)
@@ -390,7 +391,7 @@ func TestEncryptDecryptCmd_RoundTrip(t *testing.T) {
 		Key:    key,
 		Output: encryptedFile,
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = encryptCmd.Run(ctx)
 	require.NoError(t, err)
@@ -463,7 +464,7 @@ func TestEncryptCmd_GetKey(t *testing.T) {
 			require.NoError(t, err)
 
 			cmd.File = inputFile
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err = cmd.Run(ctx)
 			if tt.expectErr {
@@ -473,12 +474,9 @@ func TestEncryptCmd_GetKey(t *testing.T) {
 				// The test might fail during encryption due to invalid key format,
 				// but getKey should work correctly
 				if err != nil {
-					require.Contains(t, err.Error(), "failed to decrypt")
+					require.Contains(t, err.Error(), "failed to encrypt")
 				}
 			}
 		})
 	}
 }
-
-// Mock os.Exit for testing
-var osExit = os.Exit

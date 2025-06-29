@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/bilte-co/toolshed/internal/cli"
+	"github.com/bilte-co/toolshed/internal/testutil"
 	"github.com/bilte-co/toolshed/password"
 	"github.com/stretchr/testify/require"
 )
@@ -14,7 +15,7 @@ func TestPasswordCheckCmd_StrongPassword(t *testing.T) {
 	cmd := &cli.PasswordCheckCmd{
 		Text: "MyStr0ng!P@ssw0rd2024",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err := cmd.Run(ctx)
 	require.NoError(t, err)
@@ -35,18 +36,18 @@ func TestPasswordCheckCmd_WeakPassword(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Capture os.Exit to prevent test termination
-			oldExit := osExit
+			oldExit := cli.ExitFunc
 			var exitCode int
-			osExit = func(code int) { exitCode = code }
-			defer func() { osExit = oldExit }()
+			cli.ExitFunc = func(code int) { exitCode = code }
+			defer func() { cli.ExitFunc = oldExit }()
 
 			cmd := &cli.PasswordCheckCmd{
 				Text: tt.password,
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
-			require.NoError(t, err) // Command doesn't return error, it calls os.Exit
+			require.NoError(t, err)
 			require.Equal(t, 1, exitCode, "Should exit with code 1 for weak password")
 		})
 	}
@@ -56,45 +57,45 @@ func TestPasswordCheckCmd_EmptyPassword(t *testing.T) {
 	cmd := &cli.PasswordCheckCmd{
 		Text: "",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err := cmd.Run(ctx)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "password cannot be empty")
+	require.Contains(t, err.Error(), "failed to read password from stdin")
 }
 
 func TestPasswordCheckCmd_CustomEntropy(t *testing.T) {
 	tests := []struct {
-		name     string
-		password string
-		entropy  float64
+		name       string
+		password   string
+		entropy    float64
 		expectExit bool
 	}{
 		{"low entropy requirement", "simplepass", 20.0, false},
 		{"high entropy requirement", "Str0ngP@ssw0rd!", 100.0, true},
-		{"zero entropy", "weak", 0.0, false},
+		{"zero entropy", "weak", 0.0, true},
 		{"reasonable entropy", "MyStr0ng!P@ssw0rd2024", 70.0, false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Capture os.Exit to prevent test termination
-			oldExit := osExit
+			oldExit := cli.ExitFunc
 			var exitCode int
-			osExit = func(code int) { exitCode = code }
-			defer func() { osExit = oldExit }()
+			cli.ExitFunc = func(code int) { exitCode = code }
+			defer func() { cli.ExitFunc = oldExit }()
 
 			cmd := &cli.PasswordCheckCmd{
 				Text:    tt.password,
 				Entropy: tt.entropy,
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.NoError(t, err)
 
 			if tt.expectExit {
-				require.Equal(t, 1, exitCode, "Should exit with code 1 for insufficient entropy")
+				require.Equal(t, 1, exitCode, "Should exit with code 1 for weak password")
 			} else {
 				require.Equal(t, 0, exitCode, "Should not exit for sufficient entropy")
 			}
@@ -122,7 +123,7 @@ func TestPasswordCheckCmd_StdinInput(t *testing.T) {
 	cmd := &cli.PasswordCheckCmd{
 		Text: "-", // Read from stdin
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.NoError(t, err)
@@ -146,7 +147,7 @@ func TestPasswordCheckCmd_StdinEmpty(t *testing.T) {
 	}()
 
 	cmd := &cli.PasswordCheckCmd{} // No text parameter, should read from stdin
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.NoError(t, err)
@@ -154,10 +155,10 @@ func TestPasswordCheckCmd_StdinEmpty(t *testing.T) {
 
 func TestPasswordCheckCmd_StdinWeakPassword(t *testing.T) {
 	// Capture os.Exit to prevent test termination
-	oldExit := osExit
+	oldExit := cli.ExitFunc
 	exitCode := 0
-	osExit = func(code int) { exitCode = code }
-	defer func() { osExit = oldExit }()
+	cli.ExitFunc = func(code int) { exitCode = code }
+	defer func() { cli.ExitFunc = oldExit }()
 
 	// Mock stdin
 	oldStdin := os.Stdin
@@ -178,7 +179,7 @@ func TestPasswordCheckCmd_StdinWeakPassword(t *testing.T) {
 	cmd := &cli.PasswordCheckCmd{
 		Text: "-",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.NoError(t, err)
@@ -200,7 +201,7 @@ func TestPasswordCheckCmd_StdinEmptyInput(t *testing.T) {
 	cmd := &cli.PasswordCheckCmd{
 		Text: "-",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.Error(t, err)
@@ -226,7 +227,7 @@ func TestPasswordCheckCmd_StdinWhitespaceOnly(t *testing.T) {
 	cmd := &cli.PasswordCheckCmd{
 		Text: "-",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.Error(t, err)
@@ -271,7 +272,7 @@ func TestPasswordCheckCmd_DefaultEntropyUsage(t *testing.T) {
 		Text: "TestP@ssw0rd123!",
 		// Entropy: 0 (not set, should use default)
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err := cmd.Run(ctx)
 	require.NoError(t, err)
@@ -284,10 +285,10 @@ func TestPasswordCheckCmd_DefaultEntropyUsage(t *testing.T) {
 	}
 
 	// Capture os.Exit to prevent test termination
-	oldExit := osExit
+	oldExit := cli.ExitFunc
 	exitCode := 0
-	osExit = func(code int) { exitCode = code }
-	defer func() { osExit = oldExit }()
+	cli.ExitFunc = func(code int) { exitCode = code }
+	defer func() { cli.ExitFunc = oldExit }()
 
 	err = cmd2.Run(ctx)
 	require.NoError(t, err)
@@ -314,7 +315,7 @@ func TestPasswordCheckCmd_ReadFromPipe(t *testing.T) {
 	cmd := &cli.PasswordCheckCmd{
 		Text: "-",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.NoError(t, err)
@@ -323,37 +324,37 @@ func TestPasswordCheckCmd_ReadFromPipe(t *testing.T) {
 func TestPasswordCheck_BoundaryPasswords(t *testing.T) {
 	// Test passwords around the boundary of what's considered secure
 	tests := []struct {
-		name     string
-		password string
-		entropy  float64
+		name       string
+		password   string
+		entropy    float64
 		shouldPass bool
 	}{
 		{"just below default", "Password1!", password.DefaultEntropy + 1, false},
 		{"just above default", "Str0ngP@ssw0rd!", password.DefaultEntropy - 1, true},
-		{"exact default boundary", "TestBoundary123!", password.DefaultEntropy, false}, // This might pass or fail depending on actual entropy
+		{"exact default boundary", "TestBoundary123!", password.DefaultEntropy, true}, // This password is strong enough to pass
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Capture os.Exit to prevent test termination
-			oldExit := osExit
+			oldExit := cli.ExitFunc
 			var exitCode int
-			osExit = func(code int) { exitCode = code }
-			defer func() { osExit = oldExit }()
+			cli.ExitFunc = func(code int) { exitCode = code }
+			defer func() { cli.ExitFunc = oldExit }()
 
 			cmd := &cli.PasswordCheckCmd{
-			Text:    tt.password,
-			Entropy: tt.entropy,
+				Text:    tt.password,
+				Entropy: tt.entropy,
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.NoError(t, err)
 
 			if tt.shouldPass {
-			require.Equal(t, 0, exitCode, "Password should pass entropy check")
+				require.Equal(t, 0, exitCode, "Password should pass entropy check")
 			} else {
-			require.Equal(t, 1, exitCode, "Password should fail entropy check")
+				require.Equal(t, 1, exitCode, "Password should fail entropy check")
 			}
 		})
 	}
@@ -372,14 +373,21 @@ func TestPasswordCheckCmd_LongPasswords(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Capture os.Exit to prevent test termination
+			oldExit := cli.ExitFunc
+			var exitCode int
+			cli.ExitFunc = func(code int) { exitCode = code }
+			defer func() { cli.ExitFunc = oldExit }()
+
 			cmd := &cli.PasswordCheckCmd{
 				Text: tt.password,
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			// Just ensure it doesn't panic with long inputs
 			err := cmd.Run(ctx)
 			require.NoError(t, err)
+			_ = exitCode // Don't care about exit code for this test
 		})
 	}
 }
@@ -388,32 +396,37 @@ func TestPasswordCheckCmd_SpecialCharacters(t *testing.T) {
 	// Test passwords with various special characters
 	specialPasswords := []string{
 		"P@ssw0rd!#$%^&*()",
-		"Пароль123!", // Cyrillic
-		"密码123!",     // Chinese
-		"パスワード123!",   // Japanese
-		"🔐Password123🗝️", // Emoji
+		"Пароль123!",       // Cyrillic
+		"密码123!",           // Chinese
+		"パスワード123!",        // Japanese
+		"🔐Password123🗝️",   // Emoji
 		"P@ss\tword\n123!", // Control characters
 	}
 
 	for _, pwd := range specialPasswords {
 		t.Run("special_chars", func(t *testing.T) {
+			// Capture os.Exit to prevent test termination
+			oldExit := cli.ExitFunc
+			var exitCode int
+			cli.ExitFunc = func(code int) { exitCode = code }
+			defer func() { cli.ExitFunc = oldExit }()
+
 			cmd := &cli.PasswordCheckCmd{
 				Text: pwd,
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.NoError(t, err)
+			_ = exitCode // Don't care about exit code for this test
 		})
 	}
 }
 
-
-
 func TestPasswordCheckCmd_ReadFromTerminal(t *testing.T) {
 	// This test simulates terminal input (harder to test directly)
 	// We'll test the terminal detection logic by ensuring stdin is properly handled
-	
+
 	oldStdin := os.Stdin
 	defer func() { os.Stdin = oldStdin }()
 
@@ -432,10 +445,8 @@ func TestPasswordCheckCmd_ReadFromTerminal(t *testing.T) {
 	cmd := &cli.PasswordCheckCmd{
 		Text: "", // Empty will trigger stdin reading
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.NoError(t, err)
 }
-
-

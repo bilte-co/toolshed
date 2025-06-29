@@ -8,6 +8,7 @@ import (
 
 	"github.com/bilte-co/toolshed/hash"
 	"github.com/bilte-co/toolshed/internal/cli"
+	"github.com/bilte-co/toolshed/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,7 +36,7 @@ func TestHashStringCmd_BasicOperation(t *testing.T) {
 		},
 		{
 			name:     "hello md5",
-			text:     "hello", 
+			text:     "hello",
 			algo:     "md5",
 			format:   "hex",
 			expected: "5d41402abc4b2a76b9719d911017c592",
@@ -49,7 +50,7 @@ func TestHashStringCmd_BasicOperation(t *testing.T) {
 				Algo:   tt.algo,
 				Format: tt.format,
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.NoError(t, err)
@@ -64,10 +65,11 @@ func TestHashStringCmd_AllAlgorithms(t *testing.T) {
 	for _, algo := range algorithms {
 		t.Run(algo, func(t *testing.T) {
 			cmd := &cli.HashStringCmd{
-				Text: testText,
-				Algo: algo,
+				Text:   testText,
+				Algo:   algo,
+				Format: "hex",
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.NoError(t, err)
@@ -84,8 +86,9 @@ func TestHashStringCmd_AllFormats(t *testing.T) {
 			cmd := &cli.HashStringCmd{
 				Text:   testText,
 				Format: format,
+				Algo:   "sha256",
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.NoError(t, err)
@@ -100,7 +103,7 @@ func TestHashStringCmd_WithPrefix(t *testing.T) {
 		Format: "hex",
 		Prefix: true,
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err := cmd.Run(ctx)
 	require.NoError(t, err)
@@ -108,10 +111,11 @@ func TestHashStringCmd_WithPrefix(t *testing.T) {
 
 func TestHashStringCmd_InvalidAlgorithm(t *testing.T) {
 	cmd := &cli.HashStringCmd{
-		Text: "test",
-		Algo: "invalid-algo",
+		Text:   "test",
+		Algo:   "invalid-algo",
+		Format: "hex",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err := cmd.Run(ctx)
 	require.Error(t, err)
@@ -126,10 +130,11 @@ func TestHashFileCmd_RegularFile(t *testing.T) {
 	require.NoError(t, err)
 
 	cmd := &cli.HashFileCmd{
-		Path: testFile,
-		Algo: "sha256",
+		Path:   testFile,
+		Algo:   "sha256",
+		Format: "hex",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.NoError(t, err)
@@ -137,10 +142,11 @@ func TestHashFileCmd_RegularFile(t *testing.T) {
 
 func TestHashFileCmd_StdinInput(t *testing.T) {
 	cmd := &cli.HashFileCmd{
-		Path: "-",
-		Algo: "sha256",
+		Path:   "-",
+		Algo:   "sha256",
+		Format: "hex",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	// Mock stdin
 	oldStdin := os.Stdin
@@ -164,10 +170,11 @@ func TestHashFileCmd_StdinInput(t *testing.T) {
 
 func TestHashFileCmd_NonexistentFile(t *testing.T) {
 	cmd := &cli.HashFileCmd{
-		Path: "/nonexistent/file.txt",
-		Algo: "sha256",
+		Path:   "/nonexistent/file.txt",
+		Algo:   "sha256",
+		Format: "hex",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err := cmd.Run(ctx)
 	require.Error(t, err)
@@ -187,7 +194,7 @@ func TestHashFileCmd_WithAllOptions(t *testing.T) {
 		Format: "base64",
 		Prefix: true,
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.NoError(t, err)
@@ -195,22 +202,23 @@ func TestHashFileCmd_WithAllOptions(t *testing.T) {
 
 func TestHashDirCmd_BasicDirectory(t *testing.T) {
 	tmpDir := t.TempDir()
-	
+
 	// Create some files in the directory
 	file1 := filepath.Join(tmpDir, "file1.txt")
 	file2 := filepath.Join(tmpDir, "file2.txt")
-	
+
 	err := os.WriteFile(file1, []byte("content1"), 0o644)
 	require.NoError(t, err)
-	
+
 	err = os.WriteFile(file2, []byte("content2"), 0o644)
 	require.NoError(t, err)
 
 	cmd := &cli.HashDirCmd{
-		Path: tmpDir,
-		Algo: "sha256",
+		Path:   tmpDir,
+		Algo:   "sha256",
+		Format: "hex",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.NoError(t, err)
@@ -219,14 +227,14 @@ func TestHashDirCmd_BasicDirectory(t *testing.T) {
 func TestHashDirCmd_RecursiveVsNonRecursive(t *testing.T) {
 	tmpDir := t.TempDir()
 	subDir := filepath.Join(tmpDir, "subdir")
-	
+
 	err := os.Mkdir(subDir, 0o755)
 	require.NoError(t, err)
-	
+
 	// Create files in both directories
 	err = os.WriteFile(filepath.Join(tmpDir, "root.txt"), []byte("root"), 0o644)
 	require.NoError(t, err)
-	
+
 	err = os.WriteFile(filepath.Join(subDir, "sub.txt"), []byte("sub"), 0o644)
 	require.NoError(t, err)
 
@@ -234,9 +242,10 @@ func TestHashDirCmd_RecursiveVsNonRecursive(t *testing.T) {
 	cmdRecursive := &cli.HashDirCmd{
 		Path:      tmpDir,
 		Algo:      "sha256",
+		Format:    "hex",
 		Recursive: true,
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmdRecursive.Run(ctx)
 	require.NoError(t, err)
@@ -245,6 +254,7 @@ func TestHashDirCmd_RecursiveVsNonRecursive(t *testing.T) {
 	cmdNonRecursive := &cli.HashDirCmd{
 		Path:      tmpDir,
 		Algo:      "sha256",
+		Format:    "hex",
 		Recursive: false,
 	}
 
@@ -254,10 +264,11 @@ func TestHashDirCmd_RecursiveVsNonRecursive(t *testing.T) {
 
 func TestHashDirCmd_NonexistentDirectory(t *testing.T) {
 	cmd := &cli.HashDirCmd{
-		Path: "/nonexistent/directory",
-		Algo: "sha256",
+		Path:   "/nonexistent/directory",
+		Algo:   "sha256",
+		Format: "hex",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err := cmd.Run(ctx)
 	require.Error(t, err)
@@ -265,11 +276,12 @@ func TestHashDirCmd_NonexistentDirectory(t *testing.T) {
 
 func TestHMACCmd_BasicOperation(t *testing.T) {
 	cmd := &cli.HMACCmd{
-		Text: "test message",
-		Key:  "secret-key",
-		Algo: "sha256",
+		Text:   "test message",
+		Key:    "secret-key",
+		Algo:   "sha256",
+		Format: "hex",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err := cmd.Run(ctx)
 	require.NoError(t, err)
@@ -283,11 +295,12 @@ func TestHMACCmd_AllAlgorithms(t *testing.T) {
 	for _, algo := range algorithms {
 		t.Run(algo, func(t *testing.T) {
 			cmd := &cli.HMACCmd{
-				Text: testText,
-				Key:  testKey,
-				Algo: algo,
+				Text:   testText,
+				Key:    testKey,
+				Algo:   algo,
+				Format: "hex",
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.NoError(t, err)
@@ -305,9 +318,10 @@ func TestHMACCmd_AllFormats(t *testing.T) {
 			cmd := &cli.HMACCmd{
 				Text:   testText,
 				Key:    testKey,
+				Algo:   "sha256",
 				Format: format,
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.NoError(t, err)
@@ -323,7 +337,7 @@ func TestHMACCmd_WithPrefix(t *testing.T) {
 		Format: "hex",
 		Prefix: true,
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err := cmd.Run(ctx)
 	require.NoError(t, err)
@@ -347,7 +361,7 @@ func TestValidateCmd_ValidFile(t *testing.T) {
 		Expected: expectedHex,
 		Algo:     "sha256",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.NoError(t, err)
@@ -369,7 +383,7 @@ func TestValidateCmd_InvalidFile(t *testing.T) {
 		Expected: wrongHash,
 		Algo:     "sha256",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.Error(t, err)
@@ -381,7 +395,7 @@ func TestValidateCmd_NonexistentFile(t *testing.T) {
 		Expected: "dummy-hash",
 		Algo:     "sha256",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err := cmd.Run(ctx)
 	require.Error(t, err)
@@ -395,7 +409,7 @@ func TestCompareCmd_EqualHashes(t *testing.T) {
 		Hash1: hash1,
 		Hash2: hash2,
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err := cmd.Run(ctx)
 	require.NoError(t, err)
@@ -409,7 +423,7 @@ func TestCompareCmd_DifferentHashes(t *testing.T) {
 		Hash1: hash1,
 		Hash2: hash2,
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err := cmd.Run(ctx)
 	require.NoError(t, err) // Command succeeds but indicates hashes are different
@@ -444,7 +458,7 @@ func TestCompareCmd_InvalidHexString(t *testing.T) {
 				Hash1: tt.hash1,
 				Hash2: tt.hash2,
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.Error(t, err)
@@ -462,7 +476,7 @@ func TestCompareCmd_WithWhitespace(t *testing.T) {
 		Hash1: hash1,
 		Hash2: hash2,
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err := cmd.Run(ctx)
 	require.NoError(t, err)
@@ -477,7 +491,7 @@ func TestCompareCmd_DifferentLengthHashes(t *testing.T) {
 		Hash1: sha256Hash,
 		Hash2: md5Hash,
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err := cmd.Run(ctx)
 	require.NoError(t, err) // Should complete but indicate they're different
@@ -494,20 +508,21 @@ func TestHashFileCmd_PathSanitization(t *testing.T) {
 
 	// Test with relative path that should be sanitized
 	relPath := filepath.Base(testFile)
-	
+
 	// Change to the temp directory to test relative path resolution
 	oldWd, err := os.Getwd()
 	require.NoError(t, err)
 	defer os.Chdir(oldWd)
-	
+
 	err = os.Chdir(tmpDir)
 	require.NoError(t, err)
 
 	cmd := &cli.HashFileCmd{
-		Path: relPath,
-		Algo: "sha256",
+		Path:   relPath,
+		Algo:   "sha256",
+		Format: "hex",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.NoError(t, err)
@@ -517,10 +532,11 @@ func TestHashDirCmd_EmptyDirectory(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	cmd := &cli.HashDirCmd{
-		Path: tmpDir,
-		Algo: "sha256",
+		Path:   tmpDir,
+		Algo:   "sha256",
+		Format: "hex",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err := cmd.Run(ctx)
 	require.NoError(t, err)
@@ -530,7 +546,7 @@ func TestHashStringCmd_UnicodeContent(t *testing.T) {
 	unicodeTexts := []string{
 		"🔐 Hash this emoji 🗝️",
 		"Привет мир",
-		"こんにちは世界", 
+		"こんにちは世界",
 		"مرحبا بالعالم",
 		"Mixed: Hello 世界 🌍",
 	}
@@ -538,10 +554,11 @@ func TestHashStringCmd_UnicodeContent(t *testing.T) {
 	for _, text := range unicodeTexts {
 		t.Run("unicode_"+text[:10], func(t *testing.T) {
 			cmd := &cli.HashStringCmd{
-				Text: text,
-				Algo: "sha256",
+				Text:   text,
+				Algo:   "sha256",
+				Format: "hex",
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.NoError(t, err)
@@ -551,24 +568,25 @@ func TestHashStringCmd_UnicodeContent(t *testing.T) {
 
 func TestHMACCmd_EmptyInputs(t *testing.T) {
 	tests := []struct {
-		name     string
-		text     string
-		key      string
+		name      string
+		text      string
+		key       string
 		shouldErr bool
 	}{
 		{"empty text", "", "key", false},
-		{"empty key", "text", "", false}, 
+		{"empty key", "text", "", false},
 		{"both empty", "", "", false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := &cli.HMACCmd{
-				Text: tt.text,
-				Key:  tt.key,
-				Algo: "sha256",
+				Text:   tt.text,
+				Key:    tt.key,
+				Algo:   "sha256",
+				Format: "hex",
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			if tt.shouldErr {
@@ -579,5 +597,3 @@ func TestHMACCmd_EmptyInputs(t *testing.T) {
 		})
 	}
 }
-
-

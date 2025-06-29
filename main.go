@@ -19,14 +19,13 @@ var (
 
 // CLI represents the main command line interface
 type CLI struct {
-	Version cli.VersionFlag `help:"Show version information"`
-	Verbose bool            `short:"v" help:"Enable verbose logging"`
-
-	Hash     cli.HashCmd     `cmd:"" help:"Hash operations"`
-	Password cli.PasswordCmd `cmd:"" help:"Password operations"`
-	AES      cli.AESCmd      `cmd:"" help:"AES encryption operations"`
-	ULID     cli.ULIDCmd     `cmd:"" help:"ULID operations"`
-	Serve    cli.ServeCmd    `cmd:"" help:"Start HTTP static file server"`
+	Verbose  bool             `short:"v" help:"Enable verbose logging"`
+	Version  kong.VersionFlag `help:"Show version information"`
+	AES      cli.AESCmd       `cmd:"" help:"AES encryption operations"`
+	Hash     cli.HashCmd      `cmd:"" help:"Hash operations"`
+	Password cli.PasswordCmd  `cmd:"" help:"Password operations"`
+	Serve    cli.ServeCmd     `cmd:"" help:"Start HTTP static file server"`
+	ULID     cli.ULIDCmd      `cmd:"" help:"ULID operations"`
 }
 
 func main() {

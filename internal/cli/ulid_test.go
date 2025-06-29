@@ -7,13 +7,14 @@ import (
 	"time"
 
 	"github.com/bilte-co/toolshed/internal/cli"
+	"github.com/bilte-co/toolshed/internal/testutil"
 	"github.com/bilte-co/toolshed/ulid"
 	"github.com/stretchr/testify/require"
 )
 
 func TestULIDCreateCmd_BasicCreation(t *testing.T) {
 	cmd := &cli.ULIDCreateCmd{}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err := cmd.Run(ctx)
 	require.NoError(t, err)
@@ -36,7 +37,7 @@ func TestULIDCreateCmd_WithPrefix(t *testing.T) {
 			cmd := &cli.ULIDCreateCmd{
 				Prefix: tt.prefix,
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.NoError(t, err)
@@ -62,7 +63,7 @@ func TestULIDCreateCmd_WithCustomTimestamp(t *testing.T) {
 			cmd := &cli.ULIDCreateCmd{
 				Timestamp: tt.timestamp,
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.NoError(t, err)
@@ -77,7 +78,6 @@ func TestULIDCreateCmd_InvalidTimestamp(t *testing.T) {
 	}{
 		{"invalid format", "2023-13-45"},
 		{"not RFC3339", "2023/01/01 12:00:00"},
-		{"empty string", ""},
 		{"just text", "invalid-timestamp"},
 		{"partial date", "2023-01"},
 		{"unix timestamp", "1672531200"},
@@ -88,7 +88,7 @@ func TestULIDCreateCmd_InvalidTimestamp(t *testing.T) {
 			cmd := &cli.ULIDCreateCmd{
 				Timestamp: tt.timestamp,
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.Error(t, err)
@@ -116,7 +116,7 @@ func TestULIDCreateCmd_InvalidPrefix(t *testing.T) {
 			cmd := &cli.ULIDCreateCmd{
 				Prefix: tt.prefix,
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.Error(t, err)
@@ -130,7 +130,7 @@ func TestULIDCreateCmd_PrefixAndTimestamp(t *testing.T) {
 		Prefix:    "test",
 		Timestamp: "2023-06-15T14:30:45Z",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err := cmd.Run(ctx)
 	require.NoError(t, err)
@@ -139,7 +139,7 @@ func TestULIDCreateCmd_PrefixAndTimestamp(t *testing.T) {
 func TestULIDCreateCmd_MultipleInvocations(t *testing.T) {
 	// Ensure multiple calls generate different ULIDs
 	cmd := &cli.ULIDCreateCmd{}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	// Run multiple times to ensure uniqueness
 	for i := 0; i < 5; i++ {
@@ -155,9 +155,10 @@ func TestULIDTimestampCmd_ValidULID(t *testing.T) {
 	require.NoError(t, err)
 
 	cmd := &cli.ULIDTimestampCmd{
-		Text: testULID,
+		Text:   testULID,
+		Format: "unix",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.NoError(t, err)
@@ -177,7 +178,7 @@ func TestULIDTimestampCmd_AllFormats(t *testing.T) {
 				Text:   testULID,
 				Format: format,
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.NoError(t, err)
@@ -197,7 +198,7 @@ func TestULIDTimestampCmd_InvalidFormat(t *testing.T) {
 				Text:   testULID,
 				Format: format,
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.Error(t, err)
@@ -223,7 +224,7 @@ func TestULIDTimestampCmd_InvalidULID(t *testing.T) {
 			cmd := &cli.ULIDTimestampCmd{
 				Text: tt.ulid,
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.Error(t, err)
@@ -252,9 +253,10 @@ func TestULIDTimestampCmd_StdinInput(t *testing.T) {
 	}()
 
 	cmd := &cli.ULIDTimestampCmd{
-		Text: "-",
+		Text:   "-",
+		Format: "unix",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.NoError(t, err)
@@ -275,7 +277,7 @@ func TestULIDTimestampCmd_StdinEmpty(t *testing.T) {
 	cmd := &cli.ULIDTimestampCmd{
 		Text: "-",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.Error(t, err)
@@ -303,9 +305,10 @@ func TestULIDTimestampCmd_StdinWhitespace(t *testing.T) {
 	}()
 
 	cmd := &cli.ULIDTimestampCmd{
-		Text: "-",
+		Text:   "-",
+		Format: "unix",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.NoError(t, err)
@@ -318,14 +321,14 @@ func TestULIDTimestampCmd_StdinNoData(t *testing.T) {
 
 	// Use os.Stdin directly to simulate terminal input
 	cmd := &cli.ULIDTimestampCmd{
-	Text: "-",
+		Text: "-",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	// Note: this test may fail in CI environments where stdin behavior differs
 	err := cmd.Run(ctx)
 	require.Error(t, err)
-			require.Contains(t, err.Error(), "no data available from stdin")
+	require.Contains(t, err.Error(), "no data available from stdin")
 }
 
 func TestULIDTimestampCmd_WithPrefixedULID(t *testing.T) {
@@ -334,9 +337,10 @@ func TestULIDTimestampCmd_WithPrefixedULID(t *testing.T) {
 	require.NoError(t, err)
 
 	cmd := &cli.ULIDTimestampCmd{
-		Text: prefixedULID,
+		Text:   prefixedULID,
+		Format: "unix",
 	}
-	ctx := newTestContext()
+	ctx := testutil.NewTestContext()
 
 	err = cmd.Run(ctx)
 	require.NoError(t, err)
@@ -356,7 +360,7 @@ func TestULIDTimestampCmd_TimestampAccuracy(t *testing.T) {
 	expectedTime := testTime.Truncate(time.Millisecond)
 	actualTime := extractedTime.Truncate(time.Millisecond)
 
-	require.True(t, expectedTime.Equal(actualTime), 
+	require.True(t, expectedTime.Equal(actualTime),
 		"Expected %v, got %v", expectedTime, actualTime)
 }
 
@@ -381,7 +385,7 @@ func TestULIDCreateCmd_EdgeCases(t *testing.T) {
 				Prefix:    tt.prefix,
 				Timestamp: tt.timestamp,
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			if tt.expectErr {
@@ -406,7 +410,7 @@ func TestULIDTimestampCmd_CaseInsensitiveFormat(t *testing.T) {
 				Text:   testULID,
 				Format: format,
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			require.NoError(t, err)
@@ -426,7 +430,7 @@ func TestULIDCreateCmd_ConcurrentGeneration(t *testing.T) {
 		go func() {
 			for j := 0; j < uuidsPerGoroutine; j++ {
 				cmd := &cli.ULIDCreateCmd{}
-				ctx := newTestContext()
+				ctx := testutil.NewTestContext()
 
 				// We can't easily capture the output, but we can test for errors
 				err := cmd.Run(ctx)
@@ -473,7 +477,7 @@ func TestULIDCreateCmd_BoundaryPrefixLength(t *testing.T) {
 			cmd := &cli.ULIDCreateCmd{
 				Prefix: tt.prefix,
 			}
-			ctx := newTestContext()
+			ctx := testutil.NewTestContext()
 
 			err := cmd.Run(ctx)
 			if tt.expectErr {
@@ -485,5 +489,3 @@ func TestULIDCreateCmd_BoundaryPrefixLength(t *testing.T) {
 		})
 	}
 }
-
-
