@@ -234,7 +234,7 @@ func TestServeCmd_FullHTTPServerIntegration(t *testing.T) {
 	// Start server
 	serverDone := make(chan error, 1)
 	server := &http.Server{}
-	
+
 	go func() {
 		err := cmd.Run(ctx)
 		serverDone <- err
@@ -561,7 +561,7 @@ func TestServeCmd_EmptyDirectory(t *testing.T) {
 
 func TestServeCmd_LargeFile(t *testing.T) {
 	tmpDir := t.TempDir()
-	
+
 	// Create a larger file to test
 	largeFile := filepath.Join(tmpDir, "large.txt")
 	largeContent := strings.Repeat("This is a large file content. ", 1000)
