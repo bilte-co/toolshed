@@ -10,7 +10,7 @@ import (
 func TestEncode(t *testing.T) {
 	for _, s := range SamplesStd {
 		encoded := base62.StdEncoding.Encode([]byte(s.source))
-		
+
 		// Handle empty input case - the function returns nil for empty input
 		if len(s.source) == 0 {
 			require.Nil(t, encoded, "empty source should encode to nil")
@@ -31,7 +31,7 @@ func TestDecode(t *testing.T) {
 	for _, s := range SamplesStd {
 		decoded, err := base62.StdEncoding.Decode(s.targetBytes)
 		require.NoError(t, err, "target: %s", s.target)
-		
+
 		// Handle empty input case - the function returns nil for empty input
 		if len(s.target) == 0 {
 			require.Nil(t, decoded, "empty target should decode to nil")
@@ -45,7 +45,7 @@ func TestDecodeString(t *testing.T) {
 	for _, s := range SamplesStd {
 		decoded, err := base62.StdEncoding.DecodeString(s.target)
 		require.NoError(t, err, "target: %s", s.target)
-		
+
 		// Handle empty input case - the function returns nil for empty input
 		if len(s.target) == 0 {
 			require.Nil(t, decoded, "empty target should decode to nil")
@@ -73,7 +73,7 @@ func TestDecodeError(t *testing.T) {
 func TestEncodeWithCustomAlphabet(t *testing.T) {
 	for _, s := range SamplesWithAlphabet {
 		encoded := base62.NewEncoding(s.alphabet).Encode([]byte(s.source))
-		
+
 		// Handle empty input case - the function returns nil for empty input
 		if len(s.source) == 0 {
 			require.Nil(t, encoded, "empty source should encode to nil")
@@ -87,7 +87,7 @@ func TestDecodeWithCustomAlphabet(t *testing.T) {
 	for _, s := range SamplesWithAlphabet {
 		decoded, err := base62.NewEncoding(s.alphabet).Decode(s.targetBytes)
 		require.NoError(t, err, "target: %s, alphabet: %s", s.target, s.alphabet)
-		
+
 		// Handle empty input case - the function returns nil for empty input
 		if len(s.target) == 0 {
 			require.Nil(t, decoded, "empty target should decode to nil")
@@ -188,11 +188,11 @@ func TestNewEncoding(t *testing.T) {
 	customAlphabet := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 	enc := base62.NewEncoding(customAlphabet)
 	require.NotNil(t, enc)
-	
+
 	// Test that encoding works
 	encoded := enc.EncodeToString([]byte("test"))
 	require.NotEmpty(t, encoded)
-	
+
 	// Test round trip
 	decoded, err := enc.DecodeString(encoded)
 	require.NoError(t, err)
@@ -204,17 +204,17 @@ func TestNewEncoding_PanicConditions(t *testing.T) {
 	require.Panics(t, func() {
 		base62.NewEncoding("0123456789")
 	})
-	
+
 	// Test alphabet too long
 	require.Panics(t, func() {
 		base62.NewEncoding("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz123")
 	})
-	
+
 	// Test alphabet with newline
 	require.Panics(t, func() {
 		base62.NewEncoding("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwx")
 	})
-	
+
 	// Test alphabet with carriage return
 	require.Panics(t, func() {
 		base62.NewEncoding("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ\rabcdefghijklmnopqrstuvwx")
@@ -225,15 +225,15 @@ func TestEncode_EdgeCases(t *testing.T) {
 	// Empty input
 	result := base62.StdEncoding.Encode([]byte{})
 	require.Nil(t, result)
-	
+
 	// Zero byte (encode as empty, base62 skips leading zeros like many base encodings)
 	result = base62.StdEncoding.Encode([]byte{0})
 	require.Equal(t, []byte{}, result)
-	
+
 	// Single non-zero byte
 	result = base62.StdEncoding.Encode([]byte{1})
 	require.NotEmpty(t, result)
-	
+
 	// Verify round trip for non-zero byte
 	decoded, err := base62.StdEncoding.Decode(result)
 	require.NoError(t, err)
@@ -244,11 +244,11 @@ func TestEncodeToString_EdgeCases(t *testing.T) {
 	// Empty input
 	result := base62.StdEncoding.EncodeToString([]byte{})
 	require.Empty(t, result)
-	
+
 	// Single byte
 	result = base62.StdEncoding.EncodeToString([]byte{42})
 	require.NotEmpty(t, result)
-	
+
 	// Large input (starting from 1 to avoid leading zero issues)
 	largeInput := make([]byte, 100)
 	for i := range largeInput {
@@ -256,7 +256,7 @@ func TestEncodeToString_EdgeCases(t *testing.T) {
 	}
 	result = base62.StdEncoding.EncodeToString(largeInput)
 	require.NotEmpty(t, result)
-	
+
 	// Verify round trip for large input
 	decoded, err := base62.StdEncoding.DecodeString(result)
 	require.NoError(t, err)
@@ -270,12 +270,12 @@ func TestDecode_EdgeCases(t *testing.T) {
 	result, err := base62.StdEncoding.Decode([]byte{})
 	require.NoError(t, err)
 	require.Nil(t, result)
-	
+
 	// Single character "0" decodes to empty (leading zero handling)
 	result, err = base62.StdEncoding.Decode([]byte("0"))
 	require.NoError(t, err)
 	require.Equal(t, []byte{}, result)
-	
+
 	// With newlines and carriage returns mixed
 	result, err = base62.StdEncoding.Decode([]byte("1\n2\r3"))
 	require.NoError(t, err)
@@ -287,16 +287,16 @@ func TestDecodeString_EdgeCases(t *testing.T) {
 	result, err := base62.StdEncoding.DecodeString("")
 	require.NoError(t, err)
 	require.Nil(t, result)
-	
+
 	// Single character strings for each character type
 	result, err = base62.StdEncoding.DecodeString("0")
 	require.NoError(t, err)
 	require.Equal(t, []byte{}, result)
-	
+
 	result, err = base62.StdEncoding.DecodeString("A")
 	require.NoError(t, err)
 	require.NotNil(t, result)
-	
+
 	result, err = base62.StdEncoding.DecodeString("a")
 	require.NoError(t, err)
 	require.NotNil(t, result)
@@ -305,16 +305,16 @@ func TestDecodeString_EdgeCases(t *testing.T) {
 func TestDecode_ErrorCases(t *testing.T) {
 	// Invalid characters
 	invalidChars := []string{"@", "#", "$", "%", "^", "&", "*", "(", ")", "-", "=", "+", "[", "]", "{", "}", "|", "\\", ":", ";", "\"", "'", "<", ">", "?", "/", ".", ",", "~", "`"}
-	
+
 	for _, char := range invalidChars {
 		_, err := base62.StdEncoding.DecodeString("valid" + char + "input")
 		require.Error(t, err)
-		
+
 		// Check it's the correct error type
 		var corruptErr base62.CorruptInputError
 		require.ErrorAs(t, err, &corruptErr)
 	}
-	
+
 	// Space character (invalid)
 	_, err := base62.StdEncoding.DecodeString("valid input")
 	require.Error(t, err)
@@ -328,7 +328,7 @@ func TestCorruptInputError(t *testing.T) {
 	errMsg := err.Error()
 	require.Contains(t, errMsg, "illegal base62 data")
 	require.Contains(t, errMsg, "32")
-	
+
 	// Test different byte values
 	err = base62.CorruptInputError(64) // ASCII @
 	errMsg = err.Error()
@@ -337,27 +337,27 @@ func TestCorruptInputError(t *testing.T) {
 
 func TestRoundTrip_ComprehensiveData(t *testing.T) {
 	testCases := [][]byte{
-		{},                           // empty
-		{1},                          // single non-zero byte (zero bytes encode differently)
-		{255},                        // single max byte
-		{1, 2, 3, 4, 5},             // sequential bytes (starting from 1)
-		{255, 254, 253, 252, 251},   // descending bytes
-		make([]byte, 100),           // smaller test array for speed
+		{},                        // empty
+		{1},                       // single non-zero byte (zero bytes encode differently)
+		{255},                     // single max byte
+		{1, 2, 3, 4, 5},           // sequential bytes (starting from 1)
+		{255, 254, 253, 252, 251}, // descending bytes
+		make([]byte, 100),         // smaller test array for speed
 	}
-	
+
 	// Fill the last test case with byte values starting from 1
 	for i := range testCases[len(testCases)-1] {
 		testCases[len(testCases)-1][i] = byte((i + 1) % 256)
 	}
-	
+
 	for i, testData := range testCases {
 		// Test both Encode/Decode and EncodeToString/DecodeString
-		
+
 		// Test []byte methods
 		encoded := base62.StdEncoding.Encode(testData)
 		decoded, err := base62.StdEncoding.Decode(encoded)
 		require.NoError(t, err, "Test case %d failed", i)
-		
+
 		// Handle special case for empty inputs and zero-leading inputs
 		if len(testData) == 0 {
 			require.Nil(t, decoded, "Empty input should decode to nil")
@@ -372,12 +372,12 @@ func TestRoundTrip_ComprehensiveData(t *testing.T) {
 				require.Equal(t, expectedData, actualData, "Round trip failed for test case %d", i)
 			}
 		}
-		
+
 		// Test string methods
 		encodedStr := base62.StdEncoding.EncodeToString(testData)
 		decodedStr, err := base62.StdEncoding.DecodeString(encodedStr)
 		require.NoError(t, err, "String test case %d failed", i)
-		
+
 		// Same handling for string methods
 		if len(testData) == 0 {
 			require.Nil(t, decodedStr, "Empty input should decode to nil")
@@ -389,7 +389,7 @@ func TestRoundTrip_ComprehensiveData(t *testing.T) {
 				require.Equal(t, expectedData, decodedStr, "String round trip failed for test case %d", i)
 			}
 		}
-		
+
 		// Verify []byte and string methods produce same results
 		require.Equal(t, string(encoded), encodedStr, "Encode methods inconsistent for test case %d", i)
 	}
@@ -408,12 +408,12 @@ func trimLeadingZeros(data []byte) []byte {
 func TestStdEncoding_Availability(t *testing.T) {
 	// Ensure StdEncoding is available and working
 	require.NotNil(t, base62.StdEncoding)
-	
+
 	// Test basic functionality
 	input := "Hello, World!"
 	encoded := base62.StdEncoding.EncodeToString([]byte(input))
 	require.NotEmpty(t, encoded)
-	
+
 	decoded, err := base62.StdEncoding.DecodeString(encoded)
 	require.NoError(t, err)
 	require.Equal(t, input, string(decoded))

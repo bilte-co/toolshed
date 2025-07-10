@@ -124,12 +124,10 @@ func TestCreateULID_EdgeCases(t *testing.T) {
 	require.True(t, strings.HasPrefix(id, "test-123.special_"))
 }
 
-
-
 func TestCreateULID_Uniqueness(t *testing.T) {
 	now := time.Now()
 	ids := make(map[string]bool)
-	
+
 	// Generate multiple ULIDs at the same timestamp
 	for i := 0; i < 100; i++ {
 		id, err := CreateULID("test", now)
@@ -162,10 +160,10 @@ func TestDecode_MultipleUnderscores(t *testing.T) {
 	ts := time.Now()
 	id, err := CreateULID("", ts)
 	require.NoError(t, err)
-	
+
 	// Create test string with multiple underscores
 	testID := "first_second_third_" + id
-	
+
 	// Should decode successfully (uses last underscore)
 	ulidVal, err := Decode(testID)
 	require.NoError(t, err)
@@ -200,7 +198,7 @@ func TestTimestamp_BoundaryValues(t *testing.T) {
 	past := time.Unix(1640995200, 0) // 2022-01-01
 	id, err := CreateULID("", past)
 	require.NoError(t, err)
-	
+
 	extracted, err := Timestamp(id)
 	require.NoError(t, err)
 	require.WithinDuration(t, past, extracted, time.Millisecond)
@@ -209,7 +207,7 @@ func TestTimestamp_BoundaryValues(t *testing.T) {
 	now := time.Now()
 	id, err = CreateULID("", now)
 	require.NoError(t, err)
-	
+
 	extracted, err = Timestamp(id)
 	require.NoError(t, err)
 	require.WithinDuration(t, now, extracted, time.Millisecond)

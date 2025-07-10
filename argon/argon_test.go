@@ -202,7 +202,7 @@ func TestGenerateHashedPassword_EdgeCases(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				require.NotEmpty(t, hash)
-				
+
 				// Verify the hash can be used for comparison
 				ok, err := argon.CompareHashAndPassword(hash, "password")
 				require.NoError(t, err)
@@ -250,63 +250,63 @@ func TestCompareHashAndPassword_HashFormatErrors(t *testing.T) {
 
 func TestCompareHashAndPassword_ParameterParsingErrors(t *testing.T) {
 	tests := []struct {
-		name string
-		hash string
+		name   string
+		hash   string
 		errMsg string
 	}{
 		{
-			name: "invalid version format",
-			hash: "$argon2id$version=19$m=65536,t=2,p=2$dGVzdA$dGVzdA",
+			name:   "invalid version format",
+			hash:   "$argon2id$version=19$m=65536,t=2,p=2$dGVzdA$dGVzdA",
 			errMsg: "version mismatch",
 		},
 		{
-			name: "non-numeric version",
-			hash: "$argon2id$v=abc$m=65536,t=2,p=2$dGVzdA$dGVzdA",
+			name:   "non-numeric version",
+			hash:   "$argon2id$v=abc$m=65536,t=2,p=2$dGVzdA$dGVzdA",
 			errMsg: "version mismatch",
 		},
 		{
-			name: "too few parameters",
-			hash: "$argon2id$v=19$m=65536,t=2$dGVzdA$dGVzdA",
+			name:   "too few parameters",
+			hash:   "$argon2id$v=19$m=65536,t=2$dGVzdA$dGVzdA",
 			errMsg: "invalid password hash format",
 		},
 		{
-			name: "too many parameters",
-			hash: "$argon2id$v=19$m=65536,t=2,p=2,x=1$dGVzdA$dGVzdA",
+			name:   "too many parameters",
+			hash:   "$argon2id$v=19$m=65536,t=2,p=2,x=1$dGVzdA$dGVzdA",
 			errMsg: "invalid password hash format",
 		},
 		{
-			name: "invalid memory parameter",
-			hash: "$argon2id$v=19$m=abc,t=2,p=2$dGVzdA$dGVzdA",
+			name:   "invalid memory parameter",
+			hash:   "$argon2id$v=19$m=abc,t=2,p=2$dGVzdA$dGVzdA",
 			errMsg: "invalid memory parameter",
 		},
 		{
-			name: "invalid iterations parameter",
-			hash: "$argon2id$v=19$m=65536,t=abc,p=2$dGVzdA$dGVzdA",
+			name:   "invalid iterations parameter",
+			hash:   "$argon2id$v=19$m=65536,t=abc,p=2$dGVzdA$dGVzdA",
 			errMsg: "invalid iterations parameter",
 		},
 		{
-			name: "invalid parallelism parameter",
-			hash: "$argon2id$v=19$m=65536,t=2,p=abc$dGVzdA$dGVzdA",
+			name:   "invalid parallelism parameter",
+			hash:   "$argon2id$v=19$m=65536,t=2,p=abc$dGVzdA$dGVzdA",
 			errMsg: "invalid parallelism parameter",
 		},
 		{
-			name: "negative memory",
-			hash: "$argon2id$v=19$m=-1000,t=2,p=2$dGVzdA$dGVzdA",
+			name:   "negative memory",
+			hash:   "$argon2id$v=19$m=-1000,t=2,p=2$dGVzdA$dGVzdA",
 			errMsg: "invalid memory size",
 		},
 		{
-			name: "negative iterations",
-			hash: "$argon2id$v=19$m=65536,t=-5,p=2$dGVzdA$dGVzdA",
+			name:   "negative iterations",
+			hash:   "$argon2id$v=19$m=65536,t=-5,p=2$dGVzdA$dGVzdA",
 			errMsg: "invalid iterations count",
 		},
 		{
-			name: "negative parallelism",
-			hash: "$argon2id$v=19$m=65536,t=2,p=-3$dGVzdA$dGVzdA",
+			name:   "negative parallelism",
+			hash:   "$argon2id$v=19$m=65536,t=2,p=-3$dGVzdA$dGVzdA",
 			errMsg: "invalid parallelism count",
 		},
 		{
-			name: "parallelism too large",
-			hash: "$argon2id$v=19$m=65536,t=2,p=300$dGVzdA$dGVzdA",
+			name:   "parallelism too large",
+			hash:   "$argon2id$v=19$m=65536,t=2,p=300$dGVzdA$dGVzdA",
 			errMsg: "invalid parallelism count",
 		},
 	}
@@ -366,7 +366,7 @@ func TestCompareHashAndPassword_DifferentPasswords(t *testing.T) {
 
 	testCases := []string{
 		"different",
-		"Original", // case sensitive
+		"Original",  // case sensitive
 		"original ", // trailing space
 		" original", // leading space
 		"",

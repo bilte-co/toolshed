@@ -235,12 +235,12 @@ func TestDecrypt_WrongKey(t *testing.T) {
 func TestDecrypt_InvalidKeyLength(t *testing.T) {
 	// Create invalid key lengths for AES (valid AES key lengths are 16, 24, 32 bytes)
 	invalidKeys := [][]byte{
-		make([]byte, 10),  // 10 bytes
-		make([]byte, 15),  // 15 bytes
-		make([]byte, 17),  // 17 bytes
-		make([]byte, 20),  // 20 bytes
-		make([]byte, 1),   // 1 byte
-		make([]byte, 33),  // 33 bytes
+		make([]byte, 10), // 10 bytes
+		make([]byte, 15), // 15 bytes
+		make([]byte, 17), // 17 bytes
+		make([]byte, 20), // 20 bytes
+		make([]byte, 1),  // 1 byte
+		make([]byte, 33), // 33 bytes
 	}
 
 	for _, keyBytes := range invalidKeys {

@@ -359,7 +359,7 @@ func TestPBKDF2Hash_CustomOptions(t *testing.T) {
 
 func TestPBKDF2HashWithSalt_EmptySalt(t *testing.T) {
 	password := []byte("testpassword")
-	
+
 	key, _, err := PBKDF2HashWithSalt(password, []byte{}, nil)
 	require.NoError(t, err)
 	assert.NotEmpty(t, key)
@@ -412,7 +412,7 @@ func TestScryptHashWithSalt_EmptySalt(t *testing.T) {
 		ScryptP:      1,
 		ScryptKeyLen: 32,
 	}
-	
+
 	key, _, err := ScryptHashWithSalt(password, []byte{}, opts)
 	require.NoError(t, err)
 	assert.NotEmpty(t, key)
@@ -431,7 +431,7 @@ func TestBcryptHash_EdgeCases(t *testing.T) {
 
 func TestBcryptHash_InvalidCost(t *testing.T) {
 	password := []byte("testpassword")
-	
+
 	// Test with cost too low (should use minimum)
 	opts := &PasswordHashingOptions{
 		BcryptCost: 1,
@@ -450,7 +450,7 @@ func TestBcryptHash_InvalidCost(t *testing.T) {
 
 func TestVerifyBcrypt_InvalidHash(t *testing.T) {
 	password := []byte("testpassword")
-	
+
 	// Test with invalid hash format
 	result := VerifyBcrypt(password, []byte("invalid hash"))
 	assert.False(t, result)
@@ -482,13 +482,13 @@ func TestPasswordHashingDefaultOptions(t *testing.T) {
 	assert.Equal(t, 32, DefaultPasswordOptions.PBKDF2KeyLength)
 	assert.Equal(t, 16, DefaultPasswordOptions.PBKDF2SaltLength)
 	assert.Equal(t, "sha256", DefaultPasswordOptions.PBKDF2Algorithm)
-	
+
 	assert.Equal(t, 32768, DefaultPasswordOptions.ScryptN)
 	assert.Equal(t, 8, DefaultPasswordOptions.ScryptR)
 	assert.Equal(t, 1, DefaultPasswordOptions.ScryptP)
 	assert.Equal(t, 32, DefaultPasswordOptions.ScryptKeyLen)
 	assert.Equal(t, 16, DefaultPasswordOptions.ScryptSaltLen)
-	
+
 	assert.Equal(t, 12, DefaultPasswordOptions.BcryptCost)
 }
 

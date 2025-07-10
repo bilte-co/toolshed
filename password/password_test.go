@@ -98,7 +98,7 @@ func TestCheck_SpecialCharacters(t *testing.T) {
 		password string
 		expected bool
 	}{
-		{"unicode chars", "Пароль123!", true}, // cyrillic characters provide high entropy
+		{"unicode chars", "Пароль123!", true},    // cyrillic characters provide high entropy
 		{"emoji password", "Password123😀", true}, // emoji also provides high entropy
 		{"mixed symbols", "P@ssw0rd#$%^&*()", true},
 		{"only symbols", "!@#$%^&*()", false},
@@ -130,7 +130,7 @@ func TestCheckEntropy_EdgeCases(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ok, msg := CheckEntropy(tt.password, tt.minEntropy)
-			require.Equal(t, tt.expected, ok, "%s: Password: %s, Entropy: %f, Message: %s", 
+			require.Equal(t, tt.expected, ok, "%s: Password: %s, Entropy: %f, Message: %s",
 				tt.description, tt.password, tt.minEntropy, msg)
 		})
 	}
@@ -171,10 +171,10 @@ func TestDefaultEntropy_Value(t *testing.T) {
 func TestCheck_UsesDefaultEntropy(t *testing.T) {
 	// Test that Check() uses the same logic as CheckEntropy() with DefaultEntropy
 	password := "TestP@ssw0rd123!"
-	
+
 	checkResult, checkMsg := Check(password)
 	entropyResult, entropyMsg := CheckEntropy(password, DefaultEntropy)
-	
+
 	require.Equal(t, checkResult, entropyResult, "Check() should behave same as CheckEntropy() with DefaultEntropy")
 	require.Equal(t, checkMsg, entropyMsg, "Error messages should be identical")
 }
@@ -207,7 +207,7 @@ func TestCheck_CommonWeakPatterns(t *testing.T) {
 
 func TestCheckEntropy_FloatPrecision(t *testing.T) {
 	password := "Str0ngP@ssw0rd!"
-	
+
 	// Test with various float precision values
 	tests := []struct {
 		entropy float64

@@ -1,11 +1,11 @@
 package haiku
 
 import (
+	"crypto/rand"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"regexp"
 	"strconv"
-	"time"
 	"unicode"
 )
 
@@ -22,16 +22,36 @@ var (
 )
 
 type Haikunator struct {
-	r     *rand.Rand
 	delim string
 	token int64
 }
 
+// randomInt generates a cryptographically secure random integer in range [0, max)
+func randomInt(max int) (int, error) {
+	if max <= 0 {
+		return 0, fmt.Errorf("max must be positive")
+	}
+	n, err := rand.Int(rand.Reader, big.NewInt(int64(max)))
+	if err != nil {
+		return 0, err
+	}
+	return int(n.Int64()), nil
+}
+
+// randomInt64 generates a cryptographically secure random int64 in range [0, max)
+func randomInt64(max int64) (int64, error) {
+	if max <= 0 {
+		return 0, fmt.Errorf("max must be positive")
+	}
+	n, err := rand.Int(rand.Reader, big.NewInt(max))
+	if err != nil {
+		return 0, err
+	}
+	return n.Int64(), nil
+}
+
 func NewHaikunator() Haikunator {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-
-	h := Haikunator{r: r, delim: "-", token: 9999}
-
+	h := Haikunator{delim: "-", token: 9999}
 	return h
 }
 
@@ -40,7 +60,22 @@ func (h *Haikunator) haikunate(token, delim string) (string, error) {
 		return "", fmt.Errorf("unsafe delimiter: %s", delim)
 	}
 
-	haiku := fmt.Sprintf("%s%s%s%s%s", ADJECTIVES[h.r.Intn(len(ADJECTIVES))], delim, ACTIONS[h.r.Intn(len(ACTIONS))], delim, NOUNS[h.r.Intn(len(NOUNS))])
+	adjIdx, err := randomInt(len(ADJECTIVES))
+	if err != nil {
+		return "", fmt.Errorf("failed to generate random adjective: %w", err)
+	}
+
+	actionIdx, err := randomInt(len(ACTIONS))
+	if err != nil {
+		return "", fmt.Errorf("failed to generate random action: %w", err)
+	}
+
+	nounIdx, err := randomInt(len(NOUNS))
+	if err != nil {
+		return "", fmt.Errorf("failed to generate random noun: %w", err)
+	}
+
+	haiku := fmt.Sprintf("%s%s%s%s%s", ADJECTIVES[adjIdx], delim, ACTIONS[actionIdx], delim, NOUNS[nounIdx])
 
 	if len(token) > 0 {
 		haiku = fmt.Sprintf("%s%s%s", haiku, delim, token)
@@ -50,7 +85,11 @@ func (h *Haikunator) haikunate(token, delim string) (string, error) {
 }
 
 func (h *Haikunator) Haikunate() (string, error) {
-	tokenString := strconv.FormatInt(h.r.Int63n(h.token), 10)
+	tokenInt, err := randomInt64(h.token)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate random token: %w", err)
+	}
+	tokenString := strconv.FormatInt(tokenInt, 10)
 
 	return h.haikunate(tokenString, h.delim)
 }
@@ -59,7 +98,11 @@ func (h *Haikunator) TokenHaikunate(token int64) (string, error) {
 	tokenString := ""
 
 	if token > 0 {
-		tokenString = strconv.FormatInt(h.r.Int63n(token), 10)
+		tokenInt, err := randomInt64(token)
+		if err != nil {
+			return "", fmt.Errorf("failed to generate random token: %w", err)
+		}
+		tokenString = strconv.FormatInt(tokenInt, 10)
 	}
 
 	return h.haikunate(tokenString, h.delim)
@@ -74,7 +117,11 @@ func (h *Haikunator) TokenDelimHaikunate(token int64, delim string) (string, err
 	tokenString := ""
 
 	if token > 0 {
-		tokenString = strconv.FormatInt(h.r.Int63n(token), 10)
+		tokenInt, err := randomInt64(token)
+		if err != nil {
+			return "", fmt.Errorf("failed to generate random token: %w", err)
+		}
+		tokenString = strconv.FormatInt(tokenInt, 10)
 	}
 
 	return h.haikunate(tokenString, delim)

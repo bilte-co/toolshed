@@ -1,12 +1,10 @@
 package haiku
 
 import (
-	"math/rand"
 	"slices"
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 )
 
 func TestDefaultReturnsTwoWordsAndInt(t *testing.T) {
@@ -32,8 +30,7 @@ func TestDefaultReturnsTwoWordsAndInt(t *testing.T) {
 }
 
 func TestNonDefaultReturnsTwoWordsAndInt(t *testing.T) {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	h := Haikunator{r: r, delim: ".", token: 1000}
+	h := Haikunator{delim: ".", token: 1000}
 
 	haiku, err := h.Haikunate()
 	if err != nil {

@@ -277,11 +277,11 @@ func TestDBDSNGeneration(t *testing.T) {
 		{
 			name: "negative and zero duration values excluded",
 			config: &database.Config{
-				Name:               "testdb",
-				User:               "testuser",
-				PoolMaxConnLife:    0,               // zero duration
-				PoolMaxConnIdle:    -1 * time.Hour, // negative duration
-				PoolHealthCheck:    30 * time.Second,
+				Name:            "testdb",
+				User:            "testuser",
+				PoolMaxConnLife: 0,              // zero duration
+				PoolMaxConnIdle: -1 * time.Hour, // negative duration
+				PoolHealthCheck: 30 * time.Second,
 			},
 			contains: []string{
 				"dbname=testdb",

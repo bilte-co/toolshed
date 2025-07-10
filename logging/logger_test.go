@@ -171,7 +171,7 @@ func TestNewLogger_WhitespaceLevel_DefaultsToInfo(t *testing.T) {
 
 func TestNewLogger_CaseSensitiveLevel_DefaultsToInfo(t *testing.T) {
 	testCases := []string{"DEBUG", "Info", "WARN", "Error", "DEBUG_LEVEL"}
-	
+
 	for _, level := range testCases {
 		logger := logging.NewLogger(level, false)
 		require.NotNil(t, logger)
@@ -253,7 +253,7 @@ func TestWithLogger_NilLogger(t *testing.T) {
 	// The type assertion (*slog.Logger) will succeed for nil since nil implements *slog.Logger
 	// but the ok value will still be true, so we get the nil back
 	retrievedLogger := logging.FromContext(ctxWithLogger)
-	
+
 	// This test shows that the current implementation has a bug - it returns nil instead of default
 	// In a real implementation, we'd want this to return DefaultLogger()
 	require.Nil(t, retrievedLogger) // This is the actual current behavior
@@ -261,7 +261,7 @@ func TestWithLogger_NilLogger(t *testing.T) {
 
 func TestWithLogger_NilContext_Panics(t *testing.T) {
 	logger := logging.NewLogger("info", false)
-	
+
 	// This should panic with nil context - Go's context.WithValue panics on nil parent
 	require.Panics(t, func() {
 		logging.WithLogger(nil, logger)
@@ -278,7 +278,7 @@ func TestFromContext_NilContext_Panics(t *testing.T) {
 func TestFromContext_ContextWithWrongType(t *testing.T) {
 	ctx := context.WithValue(context.Background(), "logger", "not-a-logger")
 	logger := logging.FromContext(ctx)
-	
+
 	require.NotNil(t, logger)
 	require.Same(t, logging.DefaultLogger(), logger)
 }
@@ -287,7 +287,7 @@ func TestFromContext_ContextWithWrongKey(t *testing.T) {
 	anotherLogger := logging.NewLogger("debug", true)
 	ctx := context.WithValue(context.Background(), "different-key", anotherLogger)
 	logger := logging.FromContext(ctx)
-	
+
 	require.NotNil(t, logger)
 	require.Same(t, logging.DefaultLogger(), logger)
 }
@@ -312,7 +312,7 @@ func TestDefaultLogger_ConcurrentAccess(t *testing.T) {
 	// All should be the same instance
 	firstLogger := loggers[0]
 	require.NotNil(t, firstLogger)
-	
+
 	for i, logger := range loggers {
 		require.Same(t, firstLogger, logger, "Logger %d should be same as first logger", i)
 	}
@@ -356,17 +356,17 @@ func TestContextChaining_DeepNesting(t *testing.T) {
 	logger2 := logging.NewLogger("debug", true)
 
 	ctx := context.Background()
-	
+
 	// First level
 	ctx1 := logging.WithLogger(ctx, logger1)
 	retrieved1 := logging.FromContext(ctx1)
 	require.Same(t, logger1, retrieved1)
-	
+
 	// Second level - overwrite with new logger
 	ctx2 := logging.WithLogger(ctx1, logger2)
 	retrieved2 := logging.FromContext(ctx2)
 	require.Same(t, logger2, retrieved2)
-	
+
 	// Original context should still have original logger
 	retrievedOriginal := logging.FromContext(ctx1)
 	require.Same(t, logger1, retrievedOriginal)

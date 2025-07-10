@@ -333,14 +333,14 @@ func TestCache_DeleteIdempotency(t *testing.T) {
 
 	// Set a value first
 	cache.Set("delete_test", "value")
-	
+
 	// Verify it exists
 	_, exists := cache.Get("delete_test")
 	require.True(t, exists)
 
 	// Delete it
 	cache.Delete("delete_test")
-	
+
 	// Verify it's gone
 	_, exists = cache.Get("delete_test")
 	require.False(t, exists)

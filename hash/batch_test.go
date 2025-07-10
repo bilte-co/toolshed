@@ -232,7 +232,7 @@ func TestHashFilesInParallelWithOptions_FormatTypes(t *testing.T) {
 
 	// Test different formats
 	formats := []Format{FormatHex, FormatBase64, FormatRaw}
-	
+
 	for _, format := range formats {
 		t.Run(string(format), func(t *testing.T) {
 			result := HashFilesInParallelWithOptions([]string{testFile}, "sha256", 1, Options{Format: format})
@@ -289,12 +289,12 @@ func TestValidateFilesInParallel_EdgeCases(t *testing.T) {
 
 func TestValidateFilesInParallel_MixedResults(t *testing.T) {
 	tmpDir := t.TempDir()
-	
+
 	// Create one valid file
 	validFile := filepath.Join(tmpDir, "valid.txt")
 	err := os.WriteFile(validFile, []byte("valid content"), 0644)
 	require.NoError(t, err)
-	
+
 	validHash, err := HashFile(validFile, "sha256")
 	require.NoError(t, err)
 
@@ -364,10 +364,10 @@ func TestFileChecksum_Fields(t *testing.T) {
 
 func TestHashFilesInParallel_LargeNumberOfFiles(t *testing.T) {
 	tmpDir := t.TempDir()
-	
+
 	var filePaths []string
 	numFiles := 100
-	
+
 	// Create many small files
 	for i := range numFiles {
 		path := filepath.Join(tmpDir, fmt.Sprintf("file%d.txt", i))
@@ -379,13 +379,13 @@ func TestHashFilesInParallel_LargeNumberOfFiles(t *testing.T) {
 
 	// Test with different worker counts
 	workerCounts := []int{1, 4, 10, 20}
-	
+
 	for _, workers := range workerCounts {
 		t.Run(fmt.Sprintf("workers_%d", workers), func(t *testing.T) {
 			result := HashFilesInParallel(filePaths, "sha256", workers)
 			assert.Len(t, result.Results, numFiles)
 			assert.Empty(t, result.Errors)
-			
+
 			// All results should have hashes
 			for _, fileResult := range result.Results {
 				assert.NoError(t, fileResult.Error)
@@ -413,7 +413,7 @@ func TestValidateFileChecksum_AlgorithmPrefixEdgeCases(t *testing.T) {
 
 	// Test with malformed prefix
 	err = ValidateFileChecksum(testFile, "sha256"+expectedHexHash, "sha256") // Missing colon
-	assert.Error(t, err) // Should fail because hash format is wrong
+	assert.Error(t, err)                                                     // Should fail because hash format is wrong
 }
 
 func BenchmarkHashFilesInParallel(b *testing.B) {

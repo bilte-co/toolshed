@@ -57,7 +57,7 @@ func TestValidateHeaders_NilInputs(t *testing.T) {
 
 func TestValidateHeaders_ExactMatch(t *testing.T) {
 	headers := []string{"Name", "Email", "Age"}
-	
+
 	// Exact match in same order
 	result := csv.ValidateHeaders(headers, headers)
 	require.True(t, result)

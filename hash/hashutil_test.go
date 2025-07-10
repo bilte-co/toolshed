@@ -266,7 +266,7 @@ func TestHashDir_NonExistentDir(t *testing.T) {
 
 func TestHashDir_EmptyDir(t *testing.T) {
 	tmpDir := t.TempDir()
-	
+
 	hash, err := HashDir(tmpDir, "sha256", false)
 	require.NoError(t, err)
 	assert.NotEmpty(t, hash, "Empty directory should still produce a hash")
@@ -275,7 +275,7 @@ func TestHashDir_EmptyDir(t *testing.T) {
 func TestHashReader_FailingReader(t *testing.T) {
 	// Create a reader that fails after a few bytes
 	failingReader := &failingReader{data: []byte("test"), failAfter: 2}
-	
+
 	_, err := HashReader(failingReader, "sha256")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to read data")
@@ -292,12 +292,12 @@ func (f *failingReader) Read(p []byte) (n int, err error) {
 	if f.pos >= f.failAfter {
 		return 0, assert.AnError
 	}
-	
+
 	remaining := len(f.data) - f.pos
 	if remaining == 0 {
 		return 0, nil
 	}
-	
+
 	n = len(p)
 	if n > remaining {
 		n = remaining
@@ -305,7 +305,7 @@ func (f *failingReader) Read(p []byte) (n int, err error) {
 	if f.pos+n > f.failAfter {
 		n = f.failAfter - f.pos
 	}
-	
+
 	copy(p, f.data[f.pos:f.pos+n])
 	f.pos += n
 	return n, nil
@@ -323,7 +323,7 @@ func TestHashString_EmptyString(t *testing.T) {
 func TestHashBytes_NilBytes(t *testing.T) {
 	result, err := HashBytes(nil, "sha256")
 	require.NoError(t, err)
-	
+
 	// Should be same as empty bytes
 	expected, err := HashBytes([]byte{}, "sha256")
 	require.NoError(t, err)
@@ -405,7 +405,7 @@ func TestFormatOutput_AllFormats(t *testing.T) {
 
 func TestGetHasher_CaseInsensitive(t *testing.T) {
 	algorithms := []string{"SHA256", "Sha256", "sHa256", "SHA256"}
-	
+
 	for _, algo := range algorithms {
 		hasher, err := getHasher(algo)
 		require.NoError(t, err, "Algorithm %s should work", algo)
@@ -446,18 +446,18 @@ func TestHashDir_FileHashError(t *testing.T) {
 	// Create a directory with a file that will cause an error during hashing
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
-	
+
 	// Create the file
 	err := os.WriteFile(testFile, []byte("test"), 0644)
 	require.NoError(t, err)
-	
+
 	// Remove read permissions to cause an error
 	err = os.Chmod(testFile, 0000)
 	if err != nil {
 		t.Skip("Cannot change file permissions on this system")
 	}
 	defer os.Chmod(testFile, 0644) // Restore for cleanup
-	
+
 	_, err = HashDir(tmpDir, "sha256", false)
 	assert.Error(t, err)
 }
