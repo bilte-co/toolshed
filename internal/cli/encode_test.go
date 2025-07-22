@@ -271,7 +271,7 @@ func TestDecodeTextCmd_AllEncodings(t *testing.T) {
 	for _, encoding := range encodings {
 		t.Run(encoding, func(t *testing.T) {
 			var encodedText string
-			
+
 			// Use known valid encoded strings for testing
 			switch encoding {
 			case "base64":
@@ -334,7 +334,7 @@ func TestDecodeTextCmd_CaseInsensitive(t *testing.T) {
 	for _, encoding := range testCases {
 		t.Run(encoding, func(t *testing.T) {
 			var encodedText string
-			
+
 			// Use known valid encoded strings for testing
 			switch strings.ToLower(encoding) {
 			case "base64":
