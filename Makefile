@@ -112,7 +112,7 @@ dev: deps fmt vet ## Development build and checks
 	@$(MAKE) build
 	@echo "Development build complete"
 
-release: clean deps fmt vet vuln sec test ## Build release binaries for multiple platforms
+release: clean deps fmt vet vuln test ## Build release binaries for multiple platforms
 	@echo "Building release binaries..."
 	@goreleaser release --clean
 

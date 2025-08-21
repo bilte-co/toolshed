@@ -22,6 +22,7 @@ type CLI struct {
 	Verbose  bool             `short:"v" help:"Enable verbose logging"`
 	Version  kong.VersionFlag `help:"Show version information"`
 	AES      cli.AESCmd       `cmd:"" help:"AES encryption operations"`
+	Bishop   cli.BishopCmd    `cmd:"" help:"Generate ASCII art using drunken bishop algorithm"`
 	Encode   cli.EncodeCmd    `cmd:"" help:"Text encoding/decoding operations"`
 	Haiku    cli.HaikuCmd     `cmd:"" help:"Haiku commands"`
 	Hash     cli.HashCmd      `cmd:"" help:"Hash operations"`
