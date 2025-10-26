@@ -1,6 +1,6 @@
 module github.com/bilte-co/toolshed
 
-go 1.24.4
+go 1.25.3
 
 require (
 	github.com/alecthomas/kong v1.6.0
@@ -11,6 +11,8 @@ require (
 	github.com/maypok86/otter v1.2.4
 	github.com/oklog/ulid/v2 v2.1.1
 	github.com/stretchr/testify v1.10.0
+	github.com/twpayne/go-geos v0.20.1
+	github.com/twpayne/pgx-geos v1.0.0
 	github.com/wagslane/go-password-validator v0.3.0
 	golang.org/x/crypto v0.39.0
 )

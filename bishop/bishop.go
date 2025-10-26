@@ -93,7 +93,7 @@ func (b *Board) Walk(data []byte) {
 	// Process each byte
 	for _, byteVal := range data {
 		// Extract 4 steps from each byte (2 bits per step)
-		for i := 0; i < 4; i++ {
+		for i := range 4 {
 			// Extract 2 bits starting from LSB
 			step := (byteVal >> (i * 2)) & 0x03
 			b.move(step)

@@ -142,7 +142,7 @@ func TestULIDCreateCmd_MultipleInvocations(t *testing.T) {
 	ctx := testutil.NewTestContext()
 
 	// Run multiple times to ensure uniqueness
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		err := cmd.Run(ctx)
 		require.NoError(t, err)
 	}
@@ -426,9 +426,9 @@ func TestULIDCreateCmd_ConcurrentGeneration(t *testing.T) {
 	results := make(chan string, numGoroutines*uuidsPerGoroutine)
 	errors := make(chan error, numGoroutines*uuidsPerGoroutine)
 
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		go func() {
-			for j := 0; j < uuidsPerGoroutine; j++ {
+			for range uuidsPerGoroutine {
 				cmd := &cli.ULIDCreateCmd{}
 				ctx := testutil.NewTestContext()
 
@@ -446,7 +446,7 @@ func TestULIDCreateCmd_ConcurrentGeneration(t *testing.T) {
 	// Collect results
 	successCount := 0
 	errorCount := 0
-	for i := 0; i < numGoroutines*uuidsPerGoroutine; i++ {
+	for range numGoroutines * uuidsPerGoroutine {
 		select {
 		case <-results:
 			successCount++

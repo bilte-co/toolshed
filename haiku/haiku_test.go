@@ -218,7 +218,7 @@ func TestSafeDelimitersWork(t *testing.T) {
 func TestHaikuStructureConsistency(t *testing.T) {
 	h := NewHaikunator()
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		haiku, err := h.Haikunate()
 		if err != nil {
 			t.Errorf("Unexpected error generating haiku: %v", err)

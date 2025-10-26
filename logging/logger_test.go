@@ -297,7 +297,7 @@ func TestDefaultLogger_ConcurrentAccess(t *testing.T) {
 	results := make(chan *slog.Logger, numGoroutines)
 
 	// Launch multiple goroutines to test concurrent access
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		go func() {
 			results <- logging.DefaultLogger()
 		}()
@@ -305,7 +305,7 @@ func TestDefaultLogger_ConcurrentAccess(t *testing.T) {
 
 	// Collect all results
 	var loggers []*slog.Logger
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		loggers = append(loggers, <-results)
 	}
 

@@ -316,7 +316,7 @@ func TestHaikuGenerateCmd_MultipleInvocations(t *testing.T) {
 	}
 	ctx := testutil.NewTestContext()
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		err := cmd.Run(ctx)
 		require.NoError(t, err)
 	}
@@ -327,7 +327,7 @@ func TestHaikuGenerateCmd_ConcurrentExecution(t *testing.T) {
 	const numGoroutines = 10
 	errors := make(chan error, numGoroutines)
 
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		go func() {
 			cmd := &cli.HaikuGenerateCmd{
 				Delim: "-", // Set explicit delimiter
@@ -337,7 +337,7 @@ func TestHaikuGenerateCmd_ConcurrentExecution(t *testing.T) {
 		}()
 	}
 
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		err := <-errors
 		require.NoError(t, err)
 	}

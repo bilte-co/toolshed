@@ -427,7 +427,7 @@ func TestLargeData(t *testing.T) {
 func TestSpecialCharacters(t *testing.T) {
 	// Test all byte values 0-255
 	allBytes := make([]byte, 256)
-	for i := 0; i < 256; i++ {
+	for i := range 256 {
 		allBytes[i] = byte(i)
 	}
 

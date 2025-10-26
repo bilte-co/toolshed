@@ -39,9 +39,7 @@ func HashFilesInParallel(paths []string, algorithm string, workers int) *BatchHa
 	// Start workers
 	var wg sync.WaitGroup
 	for i := 0; i < workers; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for path := range jobs {
 				hash, err := HashFile(path, algorithm)
 				results <- FileHashResult{
@@ -51,7 +49,7 @@ func HashFilesInParallel(paths []string, algorithm string, workers int) *BatchHa
 					Algorithm: algorithm,
 				}
 			}
-		}()
+		})
 	}
 
 	// Send jobs to workers
@@ -163,14 +161,12 @@ func ValidateFilesInParallel(checksums []FileChecksum, algorithm string, workers
 	// Start workers
 	var wg sync.WaitGroup
 	for i := 0; i < workers; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for checksum := range jobs {
 				err := ValidateFileChecksum(checksum.Path, checksum.ExpectedHash, algorithm)
 				results <- err
 			}
-		}()
+		})
 	}
 
 	// Send jobs to workers

@@ -298,10 +298,7 @@ func (f *failingReader) Read(p []byte) (n int, err error) {
 		return 0, nil
 	}
 
-	n = len(p)
-	if n > remaining {
-		n = remaining
-	}
+	n = min(len(p), remaining)
 	if f.pos+n > f.failAfter {
 		n = f.failAfter - f.pos
 	}

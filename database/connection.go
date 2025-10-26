@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/bilte-co/toolshed/logging"
+	"github.com/twpayne/go-geos"
+	pgxgeos "github.com/twpayne/pgx-geos"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -38,6 +40,11 @@ func NewFromEnv(ctx context.Context) (*DB, error) {
 	pgxConfig.BeforeAcquire = func(ctx context.Context, conn *pgx.Conn) bool {
 		// Ping the connection to see if it is still valid. Ping returns an error if
 		// it fails.
+
+		// Register pgxgeos with the connection pool
+		if err := pgxgeos.Register(ctx, conn, geos.NewContext()); err != nil {
+			return false
+		}
 		return conn.Ping(ctx) == nil
 	}
 

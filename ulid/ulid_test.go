@@ -129,7 +129,7 @@ func TestCreateULID_Uniqueness(t *testing.T) {
 	ids := make(map[string]bool)
 
 	// Generate multiple ULIDs at the same timestamp
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		id, err := CreateULID("test", now)
 		require.NoError(t, err)
 		require.False(t, ids[id], "ULID should be unique")

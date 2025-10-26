@@ -641,7 +641,7 @@ func TestServeCmd_MultipleClients(t *testing.T) {
 	numClients := 5
 	results := make(chan error, numClients)
 
-	for i := 0; i < numClients; i++ {
+	for i := range numClients {
 		go func(clientID int) {
 			client := &http.Client{Timeout: 5 * time.Second}
 			resp, err := client.Get(url)
@@ -672,7 +672,7 @@ func TestServeCmd_MultipleClients(t *testing.T) {
 	}
 
 	// Collect results
-	for i := 0; i < numClients; i++ {
+	for i := range numClients {
 		select {
 		case err := <-results:
 			if err != nil {
